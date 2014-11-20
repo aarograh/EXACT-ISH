@@ -1,39 +1,48 @@
 # File definitions
-SOURCENAMES=sweeper.f90 
-MAIN=$(SOURCEDIR)/EXACT-ISH.f90
-# Compiler Stuff
-COMPILER=gfortran
-FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
+SOURCES=sweeper.f90 reader.f90 EXACT-ISH.f90
 # Directory Definitions
-BUILDDIR=${PWD}
-SOURCEDIR=/nfs-home/aarograh/homework/eecs587/EXACT-ISH
-OBJDIR=$(BUILDDIR)/obj
-# Source Definitions
-SOURCES=$(addprefix $(SOURCEDIR)/, $(SOURCENAMES))
+EMPTY=
+ifeq ($(source),$(EMPTY))
+	VPATH=/nfs-home/aarograh/homework/eecs587/EXACT-ISH
+else
+	VPATH=$(source)
+endif
+ifeq ($(build),$(EMPTY))
+	OBJDIR=$(PWD)/obj
+else
+	OBJDIR=$(build)
+endif
+# Compiler Stuff
+COMPILER=gfortran -J$(OBJDIR) -c -o
+LINKER=gfortran -o
+FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
 # Object Definitions
-OBJNAMES=$(SOURCENAMES:.f90=.o)
+OBJNAMES=$(SOURCES:.f90=.o)
 OBJECTS=$(addprefix $(OBJDIR)/, $(OBJNAMES))
 # Include Definitions
 INCLUDE=-I$(OBJDIR)
 # Executable Definition
 EXECUTABLE=EXACT-ISH.exe
 # Command Definitions
-MV=mv
 RM=rm -rf
 MK=mkdir
 
 # Default target
-all: $(OBJDIR) $(OBJECTS)
-	$(COMPILER) $(FLAGS) $(OBJECTS) $(MAIN) $(INCLUDE) -o $(EXECUTABLE)
+.PHONY: 
+all: $(OBJNAMES) 
+	@$(LINKER) $(EXECUTABLE) $(FLAGS) $(INCLUDE) $(OBJECTS)
 
 # Object file target
-$(OBJECTS): %.o : $(SOURCES)
-	$(COMPILER) $(FLAGS) $< -c; $(MV) *.o $(OBJDIR); $(MV) *.mod $(OBJDIR)
+%.o: %.f90 $(OBJDIR)
+	@$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $< 
 
 # Object directory target
 $(OBJDIR):
-	$(MK) $(OBJDIR)
+	@$(MK) $(OBJDIR)
 
 # Clean target
+.PHONY:
 clean:
-	$(RM) EXACT-ISH.exe; $(RM) $(OBJDIR)
+	@$(RM) $(EXECUTABLE)
+	@$(RM) $(OBJECTS)
+	@$(RM) $(OBJDIR)
