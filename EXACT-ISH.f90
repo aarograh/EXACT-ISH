@@ -1,0 +1,7 @@
+PROGRAM EXACTISH
+
+  USE sweeper
+
+  WRITE(*,*) 'Hello World'
+
+END PROGRAM EXACTISH
