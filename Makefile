@@ -1,5 +1,5 @@
 # File definitions
-SOURCES=sweeperUtils.f90 sweeper.f90 fspSolver.f90 reader.f90 EXACT-ISH.f90
+SOURCES=sweeperUtils.f90 sweeper.f90 fspSolver.f90 IO.f90 EXACT-ISH.f90
 # Directory Definitions
 EMPTY=
 ifeq ($(source),$(EMPTY))
