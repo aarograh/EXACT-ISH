@@ -1,7 +1,7 @@
 PROGRAM EXACTISH
 
   USE sweeper
-  USE reader
+  USE IO
 
   WRITE(*,*) 'Hello World'
 
