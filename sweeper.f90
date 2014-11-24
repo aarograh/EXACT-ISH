@@ -5,6 +5,8 @@ MODULE sweeper
 
   USE sweeperUtils
 
+  IMPLICIT NONE
+
   PUBLIC :: sweeperType
 
   TYPE :: sweeperType
@@ -40,6 +42,7 @@ MODULE sweeper
     PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeSweeper
+!      PROCEDURE,PASS :: calcFissionSrc
   END TYPE sweeperType
 
   ABSTRACT INTERFACE
@@ -79,6 +82,32 @@ MODULE sweeper
       source%qext => thisSweeper%qext
 
     END SUBROUTINE initializeSweeper
+!===============================================================================
+!    SUBROUTINE calcFissionSrc(sweeper,psi,keff)
+!      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+!      DOUBLE PRECISION,INTENT(INOUT) :: psi
+!      DOUBLE PRECISION,OPTIONAL,INTENT(IN) :: keff
+!      ! Local Variables
+!      INTEGER :: ig,ix,ir,ireg
+!      DOUBLE PRECISION :: xsnfg,rkeff
+!
+!      rkeff = 1.0D0
+!      IF(PRESENT(keff)) rkeff = 1.0D0/keff
+!
+!      psi = 0.0D0
+!      DO ig=1,sweeper%ngroups
+!        DO ix=1,sweeper%nxsreg
+!          IF(LBOUND(sweeper%myXSMesh(ix)%xsmacnf) <= ig .AND. &
+!            ig <= UBOUND(sweeper%myXSMesh(ix)%xsmacnf)) THEN
+!            xsnfg = sweeper%myXSMesh(ix)%xsmacnf(ig)*rkeff
+!            DO ir=1,sweeper%myXSMesh(ix)%nreg
+!              ireg = sweeper%myXSMesh(ix)%ireg(ir)
+!              psi(ireg) = psi(ireg) + xsnfg*sweeper%phis(ireg,ig)
+!            ENDDO
+!          endif
+!          
+!
+!    END SUBROUTINE calcFissionSrc
 !===============================================================================
     SUBROUTINE setExtSource_MOCP0(thisTS,source)
       CLASS(sweeperType),INTENT(INOUT) :: thisTS
