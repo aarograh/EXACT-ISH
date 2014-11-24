@@ -27,6 +27,7 @@ PROGRAM EXACTISH
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Performing transport sweeps...'
   WRITE(*,*) '======================================'
+  CALL mySolver%solve()
 
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Closing files...'
