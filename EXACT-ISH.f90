@@ -1,13 +1,11 @@
 PROGRAM EXACTISH
 
-  USE sweeper
-  USE fspSolver
   USE IO
+  USE fspSolver
 
   IMPLICIT NONE
 
-  TYPE(sweeperType),TARGET :: mySweeper
-  TYPE(fspSolverType) :: mySolver
+  TYPE(fspSolverType) :: solver
 
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Processing command line arguments...'
@@ -15,19 +13,14 @@ PROGRAM EXACTISH
   CALL processCmdLine()
 
   WRITE(*,*) '======================================'
-  WRITE(*,*) 'Parsing data and setting up solvers...'
-  WRITE(*,*) '======================================'
-  CALL populateData(mySweeper)
-
-  WRITE(*,*) '======================================'
   WRITE(*,*) 'Initializing solvers...'
   WRITE(*,*) '======================================'
-  CALL mySolver%initialize(mySweeper)
+  CALL solver%initialize()
 
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Performing transport sweeps...'
   WRITE(*,*) '======================================'
-  CALL mySolver%solve()
+  CALL solver%solve()
 
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Closing files...'
