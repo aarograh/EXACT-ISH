@@ -9,6 +9,7 @@ MODULE IO
   PUBLIC :: populateData
 
   INTEGER,PARAMETER :: inpFileUnitNo=123
+  INTEGER,PARAMETER :: solFileUnitNo=124
 
   CONTAINS
 !===============================================================================
@@ -17,13 +18,15 @@ MODULE IO
       CHARACTER(LEN=16) :: arg_in
 
       CALL GET_COMMAND_ARGUMENT(1,arg_in)
-      OPEN(FILE=TRIM(ADJUSTL(arg_in)),UNIT=inpFileUnitNo)
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo)
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.sol',UNIT=solFileUnitNo)
 
     END SUBROUTINE processCmdLine
 !===============================================================================
     SUBROUTINE closeFiles()
 
       CLOSE(UNIT=inpFileUnitNo)
+      CLOSE(UNIT=solFileUnitNo)
 
     END SUBROUTINE closeFiles
 !===============================================================================
