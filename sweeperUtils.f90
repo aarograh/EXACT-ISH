@@ -7,8 +7,7 @@ MODULE sweeperUtils
   PUBLIC :: CoreLongRayType
   PUBLIC :: ModMeshRayPtrArryType
   PUBLIC :: XSMeshType
-  PUBLIC :: expoa
-  PUBLIC :: expob
+  PUBLIC :: ExpTableType
 
   TYPE :: AngFluxBCFace
     SEQUENCE
@@ -46,6 +45,7 @@ MODULE sweeperUtils
   END TYPE SourceType_P0
 
   TYPE :: ModMeshType
+    INTEGER :: nmesh
     INTEGER,ALLOCATABLE :: ifrstfsreg(:)
     INTEGER,ALLOCATABLE :: neigh(:,:)
   END TYPE ModMeshType
@@ -125,7 +125,9 @@ MODULE sweeperUtils
     TYPE(ScatMatType),ALLOCATABLE :: xsmacsc(:,:)
   END TYPE XSMeshType
 
-  DOUBLE PRECISION,ALLOCATABLE :: expoa(:,:),expob(:,:)
+  TYPE :: ExpTableType
+    DOUBLE PRECISION,ALLOCATABLE :: table2D(:,:)
+  END TYPE ExpTableType
 
   ABSTRACT INTERFACE
     SUBROUTINE absintfc_initExtSource(thisSrc,ig)
