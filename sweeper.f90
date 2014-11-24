@@ -20,7 +20,7 @@ MODULE sweeper
     DOUBLE PRECISION :: pz=0.0D0
     DOUBLE PRECISION,ALLOCATABLE :: phis1g(:)
     DOUBLE PRECISION,ALLOCATABLE :: phis1gd(:)
-    DOUBLE PRECISION,ALLOCATABLE :: phis(:,:)
+    DOUBLE PRECISION,POINTER :: phis(:,:)
     DOUBLE PRECISION,POINTER :: xstr(:) => NULL()
     DOUBLE PRECISION,POINTER :: vol(:) => NULL()
     DOUBLE PRECISION,POINTER :: qbar(:) => NULL()
@@ -33,11 +33,13 @@ MODULE sweeper
     TYPE(ModularRayType),POINTER :: modRayDat
     TYPE(CoreLongRayType) :: longRayDat 
     TYPE(ModMeshRayPtrArryType),POINTER :: rtmesh(:) => NULL()
-    TYPE(XSMeshType),ALLOCATABLE :: myXSMesh(:)
+    TYPE(XSMeshType),POINTER :: myXSMesh(:)
     TYPE(ExpTableType),ALLOCATABLE :: expTableDat
 !    TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
     PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
     PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
+    CONTAINS
+      PROCEDURE,PASS :: initialize => initializeSweeper
   END TYPE sweeperType
 
   ABSTRACT INTERFACE
@@ -59,6 +61,24 @@ MODULE sweeper
   END INTERFACE
 
   CONTAINS
+!===============================================================================
+    SUBROUTINE initializeSweeper(thisSweeper,source)
+      CLASS(sweeperType),INTENT(INOUT) :: thisSweeper
+      CLASS(sourceType),POINTER,INTENT(INOUT) :: source
+
+      ! Set up source
+      ALLOCATE(SourceType_P0 :: source)
+      SELECTTYPE(source); TYPE IS(SourceType_P0)
+        thisSweeper%mySrc => source
+      END SELECT
+      source%nreg = thisSweeper%nreg
+      source%nxsreg = thisSweeper%nxsreg
+      source%ng = thisSweeper%ngroups
+      source%phis => thisSweeper%phis
+      source%myXSMesh => thisSweeper%myXSMesh
+      source%qext => thisSweeper%qext
+
+    END SUBROUTINE initializeSweeper
 !===============================================================================
     SUBROUTINE setExtSource_MOCP0(thisTS,source)
       CLASS(sweeperType),INTENT(INOUT) :: thisTS
