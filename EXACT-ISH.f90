@@ -4,6 +4,8 @@ PROGRAM EXACTISH
   USE fspSolver
   USE IO
 
+  IMPLICIT NONE
+
   TYPE(sweeperType),TARGET :: mySweeper
   TYPE(fspSolverType) :: mySolver
 
