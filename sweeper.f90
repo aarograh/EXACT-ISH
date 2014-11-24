@@ -73,6 +73,7 @@ MODULE sweeper
       ALLOCATE(SourceType_P0 :: source)
       SELECTTYPE(source); TYPE IS(SourceType_P0)
         thisSweeper%mySrc => source
+        ALLOCATE(source%qi1g(thisSweeper%nreg))
       END SELECT
       source%nreg = thisSweeper%nreg
       source%nxsreg = thisSweeper%nxsreg
@@ -80,6 +81,10 @@ MODULE sweeper
       source%phis => thisSweeper%phis
       source%myXSMesh => thisSweeper%myXSMesh
       source%qext => thisSweeper%qext
+      ALLOCATE(source%qextmg(source%nreg,source%ng))
+
+      thisSweeper%sweep => MOCSolver_sweep1G
+      thisSweeper%setExtSource => setExtSource_MOCP0
 
     END SUBROUTINE initializeSweeper
 !===============================================================================
@@ -105,6 +110,7 @@ MODULE sweeper
 !              psi(ireg) = psi(ireg) + xsnfg*sweeper%phis(ireg,ig)
 !            ENDDO
 !          endif
+!TODO: calcMacroChi?
 !          
 !
 !    END SUBROUTINE calcFissionSrc
