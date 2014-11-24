@@ -3,6 +3,8 @@ PROGRAM EXACTISH
   USE sweeper
   USE IO
 
+  TYPE(sweeperType) :: mySweeper
+
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Processing command line arguments...'
   WRITE(*,*) '======================================'
@@ -11,6 +13,7 @@ PROGRAM EXACTISH
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Parsing data and setting up solvers...'
   WRITE(*,*) '======================================'
+  CALL populateData(mySweeper)
 
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Performing transport sweeps...'
