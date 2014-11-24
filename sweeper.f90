@@ -31,7 +31,8 @@ MODULE sweeper
     TYPE(ModularRayType),POINTER :: modRayDat
     TYPE(CoreLongRayType) :: longRayDat 
     TYPE(ModMeshRayPtrArryType),POINTER :: rtmesh(:) => NULL()
-    TYPE(XSMeshType),ALLOCATABLE :: myXSMesh
+    TYPE(XSMeshType),ALLOCATABLE :: myXSMesh(:)
+    TYPE(ExpTableType),ALLOCATABLE :: expTableDat
 !    TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
     PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
     PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
