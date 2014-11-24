@@ -35,6 +35,8 @@ MODULE IO
       ! Read number of groups and size of XS mesh
       READ(123,*) n1,n2,n3
       mySweeper%ngroups=n3-n2+1
+      mySweeper%igstt=n2
+      mySweeper%igstp=n3
       ALLOCATE(mySweeper%myXSMesh(n1))
 
       ! Read XSMeshType data
