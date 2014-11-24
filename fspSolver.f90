@@ -1,17 +1,16 @@
 MODULE fspSolver
 
   USE sweeper
+  USE IO
 
   IMPLICIT NONE
 
   PUBLIC :: fspSolverType
 
   TYPE :: fspSolverType
-    INTEGER :: igstt = 0
-    INTEGER :: igstp = 0
     DOUBLE PRECISION,POINTER :: psi(:) => NULL()
     CLASS(SourceType),POINTER :: thisSource
-    CLASS(sweeperType),POINTER :: thisSweeper => NULL()
+    CLASS(sweeperType),POINTER :: sweeper => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeFspSolver
       PROCEDURE,PASS :: solve => solveFspSolver
@@ -20,38 +19,37 @@ MODULE fspSolver
 
   CONTAINS
 !===============================================================================
-    SUBROUTINE initializeFspSolver(mySolver,thisSweeper)
-      CLASS(fspSolverType),INTENT(INOUT) :: mySolver
-      CLASS(sweeperType),TARGET,INTENT(INOUT) :: thisSweeper
+    SUBROUTINE initializeFspSolver(solver)
+      CLASS(fspSolverType),INTENT(INOUT) :: solver
 
-      mySolver%thisSweeper => thisSweeper
-      mySolver%igstt = thisSweeper%igstt
-      mySolver%igstp = thisSweeper%igstp
+      ALLOCATE(solver%sweeper)
+      CALL populateData(solver%sweeper)
 
-      CALL thisSweeper%initialize(mySolver%thisSource)
+      CALL solver%sweeper%initialize(solver%thisSource)
 
     END SUBROUTINE initializeFspSolver
 !===============================================================================
-    SUBROUTINE solveFspSolver(mySolver)
-      CLASS(fspSolverType),INTENT(INOUT) :: mySolver
+    SUBROUTINE solveFspSolver(solver)
+      CLASS(fspSolverType),INTENT(INOUT) :: solver
 
-      CALL mySolver%step()
+      CALL solver%step()
 
     END SUBROUTINE solveFspSolver
 !===============================================================================
-    SUBROUTINE stepFspSolver(mySolver)
-      CLASS(fspSolverType),INTENT(INOUT) :: mySolver
+    SUBROUTINE stepFspSolver(solver)
+      CLASS(fspSolverType),INTENT(INOUT) :: solver
       ! Local Variables
       INTEGER :: ig
 
-      DO ig=mySolver%igstt,mySolver%igstp
+      DO ig=solver%sweeper%igstt,solver%sweeper%igstp
         ! Set up source
-        CALL mySolver%thisSource%initExtSource(ig)
-        CALL mySolver%thisSource%computeMGFS(ig,mySolver%psi)
-        CALL mySolver%thisSource%updateInScatter(ig,mySolver%igstt,mySolver%igstp)
-        CALL mySolver%thisSweeper%setExtSource(mySolver%thisSource)
+        CALL solver%thisSource%initExtSource(ig)
+        CALL solver%thisSource%computeMGFS(ig,solver%psi)
+        CALL solver%thisSource%updateInScatter( &
+          ig,solver%sweeper%igstt,solver%sweeper%igstp)
+        CALL solver%sweeper%setExtSource(solver%thisSource)
         ! Perform sweep
-        CALL mySolver%thisSweeper%sweep(ig,3,1.0D-03)
+        CALL solver%sweeper%sweep(ig,3,1.0D-03)
       ENDDO
 
     END SUBROUTINE stepFspSolver
