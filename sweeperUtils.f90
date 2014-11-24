@@ -1,5 +1,7 @@
 MODULE sweeperUtils
 
+  IMPLICIT NONE
+
   PUBLIC :: AngFluxBC
   PUBLIC :: SourceType
   PUBLIC :: SourceType_P0
@@ -35,6 +37,8 @@ MODULE sweeperUtils
     TYPE(XSMeshType),POINTER :: myXSMesh(:) => NULL()
     CONTAINS
       PROCEDURE(absintfc_initExtSource),PASS,DEFERRED :: initExtSource
+      PROCEDURE(absintfc_computeMGFS),PASS,DEFERRED :: computeMGFS
+      PROCEDURE(absintfc_updateInScatter),PASS,DEFERRED :: updateInScatter
   END TYPE SourceType
 
   TYPE,EXTENDS(SourceType) :: SourceType_P0
@@ -42,6 +46,8 @@ MODULE sweeperUtils
     CONTAINS
       PROCEDURE,PASS :: updateSelfScatter_P0
       PROCEDURE,PASS :: initExtSource => initExtSource_P0
+      PROCEDURE,PASS :: computeMGFS => computeMGFS_P0
+      PROCEDURE,PASS :: updateInScatter => updateInScatter_P0
   END TYPE SourceType_P0
 
   TYPE :: ModMeshType
@@ -135,6 +141,25 @@ MODULE sweeperUtils
       CLASS(SourceType),INTENT(INOUT) :: thisSrc
       INTEGER,INTENT(IN) :: ig
     END SUBROUTINE absintfc_initExtSource 
+  END INTERFACE
+
+  ABSTRACT INTERFACE
+    SUBROUTINE absintfc_computeMGFS(thisSrc,ig,psi)
+      IMPORT SourceType
+      CLASS(SourceType),INTENT(INOUT) :: thisSrc
+      INTEGER,INTENT(IN) :: ig
+      DOUBLE PRECISION,INTENT(IN) :: psi(:)
+    END SUBROUTINE absintfc_computeMGFS
+  END INTERFACE
+
+  ABSTRACT INTERFACE
+    SUBROUTINE absintfc_updateInScatter(thisSrc,ig,igstt,igstp)
+      IMPORT SourceType
+      CLASS(SourceType),INTENT(INOUT) :: thisSrc
+      INTEGER,INTENT(IN) :: ig
+      INTEGER,INTENT(IN) :: igstt
+      INTEGER,INTENT(IN) :: igstp
+    END SUBROUTINE absintfc_updateInScatter
   END INTERFACE
 
   CONTAINS
