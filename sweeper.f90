@@ -11,6 +11,8 @@ MODULE sweeper
     LOGICAL :: hasSource=.FALSE.
     INTEGER :: ninners=0
     INTEGER :: ngroups=0
+    INTEGER :: igstt=0
+    INTEGER :: igstp=0
     INTEGER :: activeg=0
     INTEGER :: nsweeps=0
     INTEGER :: nxsreg=0
