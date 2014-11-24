@@ -12,7 +12,7 @@ MODULE sweeper
   TYPE :: sweeperType
     LOGICAL :: hasSource=.FALSE.
     INTEGER :: ninners=0
-    INTEGER :: ngroups=0
+    INTEGER :: ng=0
     INTEGER :: igstt=0
     INTEGER :: igstp=0
     INTEGER :: activeg=0
@@ -40,27 +40,36 @@ MODULE sweeper
 !    TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
     PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
     PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
+    PROCEDURE(absintfc_sweep2Dprodquad),POINTER :: sweep2D_prodquad => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeSweeper
 !      PROCEDURE,PASS :: calcFissionSrc
   END TYPE sweeperType
 
   ABSTRACT INTERFACE
-    SUBROUTINE absintfc_sweep(sweeper,igroup,ninners,tol)
+    SUBROUTINE absintfc_sweep(sweeper,ig,ninners,tol)
       IMPORT sweeperType
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
-      INTEGER,INTENT(IN) :: igroup
+      INTEGER,INTENT(IN) :: ig
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
     END SUBROUTINE absintfc_sweep
   END INTERFACE
 
   ABSTRACT INTERFACE
-    SUBROUTINE absintfc_setExtSource(thisTS,source)
+    SUBROUTINE absintfc_setExtSource(sweeper,source)
       IMPORT sweeperType,SourceType
-      CLASS(sweeperType),INTENT(INOUT) :: thisTS
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
       CLASS(SourceType),POINTER,INTENT(IN) :: source
     END SUBROUTINE absintfc_setExtSource
+  END INTERFACE
+
+  ABSTRACT INTERFACE
+    SUBROUTINE absintfc_sweep2Dprodquad(sweeper,i)
+      IMPORT sweeperType
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: i
+    END SUBROUTINE absintfc_sweep2Dprodquad
   END INTERFACE
 
   CONTAINS
@@ -77,14 +86,20 @@ MODULE sweeper
       END SELECT
       source%nreg = thisSweeper%nreg
       source%nxsreg = thisSweeper%nxsreg
-      source%ng = thisSweeper%ngroups
+      source%ng = thisSweeper%ng
       source%phis => thisSweeper%phis
       source%myXSMesh => thisSweeper%myXSMesh
       source%qext => thisSweeper%qext
       ALLOCATE(source%qextmg(source%nreg,source%ng))
 
+      ! Allocate sweeper variables
+      ALLOCATE(thisSweeper%phis1g(thisSweeper%nreg))
+      ALLOCATE(thisSweeper%phis1gd(thisSweeper%nreg))
+      ALLOCATE(thisSweeper%qbar(thisSweeper%nreg))
+
       thisSweeper%sweep => MOCSolver_sweep1G
       thisSweeper%setExtSource => setExtSource_MOCP0
+      thisSweeper%sweep2D_prodquad => sweep2D_prodquad_P0
 
     END SUBROUTINE initializeSweeper
 !===============================================================================
@@ -100,7 +115,7 @@ MODULE sweeper
 !      IF(PRESENT(keff)) rkeff = 1.0D0/keff
 !
 !      psi = 0.0D0
-!      DO ig=1,sweeper%ngroups
+!      DO ig=1,sweeper%ng
 !        DO ix=1,sweeper%nxsreg
 !          IF(LBOUND(sweeper%myXSMesh(ix)%xsmacnf) <= ig .AND. &
 !            ig <= UBOUND(sweeper%myXSMesh(ix)%xsmacnf)) THEN
@@ -115,26 +130,19 @@ MODULE sweeper
 !
 !    END SUBROUTINE calcFissionSrc
 !===============================================================================
-    SUBROUTINE setExtSource_MOCP0(thisTS,source)
-      CLASS(sweeperType),INTENT(INOUT) :: thisTS
+    SUBROUTINE setExtSource_MOCP0(sweeper,source)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
       CLASS(SourceType),POINTER,INTENT(IN) :: source
 
-      NULLIFY(thisTS%qext)
-      thisTS%hasSource=.FALSE.
+      NULLIFY(sweeper%qext)
+      sweeper%hasSource=.FALSE.
       SELECTTYPE(source); TYPE IS(SourceType_P0)
-        thisTS%mySrc => source
-        thisTS%qext => source%qext
-        thisTS%hasSource=.TRUE.
+        sweeper%mySrc => source
+        sweeper%qext => source%qext
+        sweeper%hasSource=.TRUE.
       ENDSELECT
 
     END SUBROUTINE setExtSource_MOCP0
-!===============================================================================
-    SUBROUTINE MOCSolver_Sweep1G(sweeper,igroup,ninners,tol)
-      CLASS(sweeperType),INTENT(INOUT) :: sweeper
-      INTEGER,INTENT(IN) :: igroup
-      INTEGER,INTENT(IN) :: ninners
-      DOUBLE PRECISION,INTENT(IN) :: tol
-    END SUBROUTINE MOCSolver_Sweep1G
 !===============================================================================
     SUBROUTINE MOCSOlver_Setup1GFSP(thisXSMesh,nxsreg,phis1g,nreg,xstr,qbar,ig)
       INTEGER,INTENT(IN) :: nxsreg
@@ -157,4 +165,50 @@ MODULE sweeper
       ENDDO
 
     END SUBROUTINE MOCSolver_Setup1GFSP
+!===============================================================================
+    SUBROUTINE MOCSolver_Sweep1G(sweeper,ig,ninners,tol)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: ig
+      INTEGER,INTENT(IN) :: ninners
+      DOUBLE PRECISION,INTENT(IN) :: tol
+      ! Local Variables
+      INTEGER :: i
+
+      IF(1 <= ig .AND. ig <= sweeper%ng) THEN
+        sweeper%activeg = ig
+        sweeper%phiang1g_in => sweeper%phiang(ig)
+        sweeper%phis1g = sweeper%phis(:,ig)
+
+        DO i=1,ninners
+          sweeper%nsweeps = sweeper%nsweeps + 1
+          !IF(i == ninners) sweeper%sweepCur=.TRUE.
+          CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
+          CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
+            sweeper%phis1g,sweeper%nreg,sweeper%xstr,sweeper%qbar,ig)
+          sweeper%phis1gd = sweeper%phis1g
+
+          sweeper%phis1g = 0.0D0
+
+          ! There's an call to sweeper%UpdateBC%finishi here for i > 1
+
+          ! Assumes sweeper%sweepCur == .FALSE.
+          CALL sweeper%sweep2D_prodquad(i)
+        ENDDO !i
+
+        sweeper%phis(:,ig) = sweeper%phis1g
+        ! Another updateBC%Finish here
+        ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
+
+        ! hasSource = .FALSE.
+      ENDIF
+
+    END SUBROUTINE MOCSolver_Sweep1G
+!===============================================================================
+    SUBROUTINE sweep2D_prodquad_P0(sweeper,i)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: i
+
+
+
+    END SUBROUTINE sweep2D_prodquad_P0
 END MODULE sweeper
