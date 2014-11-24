@@ -10,16 +10,20 @@ MODULE fspSolver
     CLASS(SourceType),POINTER :: thisSource
     CLASS(sweeperType),POINTER :: thisSweeper => NULL()
     CONTAINS
-      PROCEDURE,PASS :: initialize
+      PROCEDURE,PASS :: initialize => initializeFspSolver
   END TYPE fspSolverType
 
   CONTAINS
 !===============================================================================
-    SUBROUTINE initialize(mySolver,thisSweeper)
+    SUBROUTINE initializeFspSolver(mySolver,thisSweeper)
       CLASS(fspSolverType),INTENT(INOUT) :: mySolver
       CLASS(sweeperType),TARGET,INTENT(INOUT) :: thisSweeper
 
+      mySolver%thisSweeper => thisSweeper
+      mySolver%igstt = thisSweeper%igstt
+      mySolver%igstp = thisSweeper%igstp
 
+      CALL thisSweeper%initialize(mySolver%thisSource)
 
-    END SUBROUTINE initialize
+    END SUBROUTINE initializeFspSolver
 END MODULE fspSolver
