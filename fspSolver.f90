@@ -14,6 +14,7 @@ MODULE fspSolver
     CLASS(sweeperType),POINTER :: thisSweeper => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeFspSolver
+      PROCEDURE,PASS :: solve => solveFspSolver
       PROCEDURE,PASS :: step => stepFspSolver
   END TYPE fspSolverType
 
@@ -30,6 +31,13 @@ MODULE fspSolver
       CALL thisSweeper%initialize(mySolver%thisSource)
 
     END SUBROUTINE initializeFspSolver
+!===============================================================================
+    SUBROUTINE solveFspSolver(mySolver)
+      CLASS(fspSolverType),INTENT(INOUT) :: mySolver
+
+      CALL mySolver%step()
+
+    END SUBROUTINE solveFspSolver
 !===============================================================================
     SUBROUTINE stepFspSolver(mySolver)
       CLASS(fspSolverType),INTENT(INOUT) :: mySolver
