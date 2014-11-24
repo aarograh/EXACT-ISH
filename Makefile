@@ -13,8 +13,14 @@ else
 	OBJDIR=$(build)
 endif
 # Compiler Stuff
-COMPILER=gfortran -J$(OBJDIR) -c -o
-LINKER=gfortran -o
+ifeq ($(compiler),$(EMPTY))
+	COMPILER=gfortran -J$(OBJDIR) -c -o
+	LINKER=gfortran -o
+#	COMPILER=/nfs-home/aarograh/homework/eecs587/linux86-64/14.10/bin/pgfortran -c -o
+#	LINKER=/nfs-home/aarograh/homework/eecs587/linux86-64/14.10/bin/pgfortran -o
+else
+	COMPILER=$(compiler)
+endif
 FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
 # Object Definitions
 OBJNAMES=$(SOURCES:.f90=.o)
