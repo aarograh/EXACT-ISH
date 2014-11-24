@@ -44,7 +44,7 @@ MODULE sweeperUtils
   TYPE,EXTENDS(SourceType) :: SourceType_P0
     DOUBLE PRECISION,POINTER :: qi1g(:) => NULL()
     CONTAINS
-      PROCEDURE,PASS :: updateSelfScatter_P0
+      PROCEDURE,PASS :: updateSelfScatter => updateSelfScatter_P0
       PROCEDURE,PASS :: initExtSource => initExtSource_P0
       PROCEDURE,PASS :: computeMGFS => computeMGFS_P0
       PROCEDURE,PASS :: updateInScatter => updateInScatter_P0
@@ -164,19 +164,35 @@ MODULE sweeperUtils
 
   CONTAINS
 !===============================================================================
-!TODO: MOCSweeper_P0.f90:47
-    SUBROUTINE updateSelfScatter_P0(thisSrc,igroup,qbar,phis1g)
+    SUBROUTINE updateSelfScatter_P0(thisSrc,ig,qbar,phis1g)
       CLASS(SourceType_P0),INTENT(IN) :: thisSrc
-      INTEGER,INTENT(IN) :: igroup
+      INTEGER,INTENT(IN) :: ig
       DOUBLE PRECISION,INTENT(INOUT) :: qbar(:)
-      DOUBLE PRECISION,INTENT(IN) :: phis1g
+      DOUBLE PRECISION,INTENT(IN) :: phis1g(:)
+      ! Local variables
+      DOUBLE PRECISION,PARAMETER :: r4pi=0.25D0/3.141592653589793D0
+      INTEGER :: ix,ir,ireg
+      DOUBLE PRECISION :: xstrg,xssgg,rxstrg4pi
+
+      qbar = thisSrc%qi1g
+      ! Assumes no XS splitting (See SourceTypes.f90:470
+      DO ix=1,thisSrc%nxsreg
+        xssgg = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig)
+        xstrg = thisSrc%myXSMesh(ix)%xsmactr(ig)
+        rxstrg4pi = r4pi/xstrg
+        DO ir=1,thisSrc%myXSMesh(ix)%nreg
+          ireg = thisSrc%myXSMesh(ix)%ireg(ir)
+          qbar(ireg) = (qbar(ireg) + xssgg*phis1g(ireg))*rxstrg4pi
+        ENDDO !ir
+      ENDDO !ix
+
     END SUBROUTINE updateSelfScatter_P0
 !===============================================================================
     SUBROUTINE initExtSource_P0(thisSrc,ig)
       CLASS(SourceType_P0),INTENT(INOUT) :: thisSrc
       INTEGER,INTENT(IN) :: ig
 
-      thisSrc%qi1g=thisSrc%qextmg(:,ig)
+      thisSrc%qi1g = thisSrc%qextmg(:,ig)
 
     END SUBROUTINE initExtSource_P0
 !===============================================================================
@@ -185,15 +201,15 @@ MODULE sweeperUtils
       INTEGER,INTENT(IN) :: ig
       DOUBLE PRECISION,INTENT(IN) :: psi(:)
       ! Local variables
-      INTEGER :: ix,ixo,ir,ireg
+      INTEGER :: ix,ir,ireg
       DOUBLE PRECISION :: chireg
 
       DO ix=1,thisSrc%nxsreg
         IF(ALLOCATED(thisSrc%myXSMesh(ix)%xsmacchi)) THEN
-          chireg=thisSrc%myXSMesh(ix)%xsmacchi(ig)
+          chireg = thisSrc%myXSMesh(ix)%xsmacchi(ig)
           DO ir=1,thisSrc%myXSMesh(ix)%nreg
-            ireg=thisSrc%myXSMesh(ix)%ireg(ir)
-            thisSrc%qi1g(ireg)=thisSrc%qi1g(ireg)+psi(ireg)*chireg
+            ireg = thisSrc%myXSMesh(ix)%ireg(ir)
+            thisSrc%qi1g(ireg) = thisSrc%qi1g(ireg) + psi(ireg)*chireg
           ENDDO
         ENDIF
       ENDDO
@@ -214,10 +230,10 @@ MODULE sweeperUtils
           IF(igstt <= ig2 .AND. ig2 <= igstp) THEN
             IF(thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%gmin <= ig2 .AND. &
               ig2 <= thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%gmax .AND. ig /= ig2) THEN
-              xss_ig2_to_ig=thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig2)
+              xss_ig2_to_ig = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig2)
               DO ir=1,thisSrc%myXSMesh(ix)%nreg
-                ireg=thisSrc%myXSMesh(ix)%ireg(ir)
-                thisSrc%qi1g(ireg)=thisSrc%qi1g(ireg)+ &
+                ireg = thisSrc%myXSMesh(ix)%ireg(ir)
+                thisSrc%qi1g(ireg) = thisSrc%qi1g(ireg) +  &
                   xss_ig2_to_ig*thisSrc%phis(ireg,ig2)
               ENDDO
             ENDIF
