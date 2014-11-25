@@ -76,33 +76,33 @@ MODULE sweeper
 
   CONTAINS
 !===============================================================================
-    SUBROUTINE initializeSweeper(thisSweeper,source)
-      CLASS(sweeperType),INTENT(INOUT) :: thisSweeper
+    SUBROUTINE initializeSweeper(sweeper,source)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
       CLASS(sourceType),POINTER,INTENT(INOUT) :: source
 
       ! Set up source
       ALLOCATE(SourceType_P0 :: source)
       SELECTTYPE(source); TYPE IS(SourceType_P0)
-        thisSweeper%mySrc => source
-        ALLOCATE(source%qi1g(thisSweeper%nreg))
+        sweeper%mySrc => source
+        ALLOCATE(source%qi1g(sweeper%nreg))
+        source%qext => source%qi1g
       END SELECT
-      source%nreg = thisSweeper%nreg
-      source%nxsreg = thisSweeper%nxsreg
-      source%ng = thisSweeper%ng
-      source%phis => thisSweeper%phis
-      source%myXSMesh => thisSweeper%myXSMesh
-      source%qext => thisSweeper%qext
+      source%nreg = sweeper%nreg
+      source%nxsreg = sweeper%nxsreg
+      source%ng = sweeper%ng
+      source%phis => sweeper%phis
+      source%myXSMesh => sweeper%myXSMesh
       ALLOCATE(source%qextmg(source%nreg,source%ng))
 
       ! Allocate sweeper variables
-      ALLOCATE(thisSweeper%phis1g(thisSweeper%nreg))
-      ALLOCATE(thisSweeper%phis1gd(thisSweeper%nreg))
-      ALLOCATE(thisSweeper%qbar(thisSweeper%nreg))
-      ALLOCATE(thisSweeper%xstr(thisSweeper%nreg))
+      ALLOCATE(sweeper%phis1g(sweeper%nreg))
+      ALLOCATE(sweeper%phis1gd(sweeper%nreg))
+      ALLOCATE(sweeper%qbar(sweeper%nreg))
+      ALLOCATE(sweeper%xstr(sweeper%nreg))
 
-      thisSweeper%sweep => MOCSolver_sweep1G
-      thisSweeper%setExtSource => setExtSource_MOCP0
-      thisSweeper%sweep2D_prodquad => sweep2D_prodquad_P0
+      sweeper%sweep => MOCSolver_sweep1G
+      sweeper%setExtSource => setExtSource_MOCP0
+      sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
 
     END SUBROUTINE initializeSweeper
 !===============================================================================
@@ -199,6 +199,10 @@ MODULE sweeper
         ENDDO !i
 
         sweeper%phis(:,ig) = sweeper%phis1g
+IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
+DO i=1,sweeper%nreg
+WRITE(125,*) sweeper%phis1g(i)
+ENDDO
         ! Another updateBC%Finish here
         ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
 
@@ -286,9 +290,11 @@ MODULE sweeper
             phio2(nseglray+1) = &
               sweeper%phiang1g_in%angle(iang)%face(is2)%angflux(ipol,ibc2)
             iseg2 = nseglray + 1
+!WRITE(*,*) ilray,iang,ipol,ibc1,ibc2,':',phio1(0),phio2(nseglray+1)
 
             DO iseg1=1,nseglray
               iseg2 = iseg2 - 1
+!WRITE(*,*) ilray,ipol,iseg1,iseg2,':',phio1(iseg1-1),phio2(iseg2+1)
 
               ireg1 = irg_seg(iseg1)
               phid1 = phio1(iseg1-1) - sweeper%qbar(ireg1)
@@ -313,6 +319,7 @@ MODULE sweeper
         tphi(:,ithd) = tphi(:,ithd) + phibar
 !        CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
       ENDDO !iang
+!WRITE(*,*) phibar
 
       DEALLOCATE(phibar)
 
