@@ -9,7 +9,7 @@ MODULE fspSolver
 
   TYPE :: fspSolverType
     DOUBLE PRECISION,POINTER :: psi(:) => NULL()
-    CLASS(SourceType),POINTER :: thisSource
+    CLASS(SourceType),POINTER :: source
     CLASS(sweeperType),POINTER :: sweeper => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeFspSolver
@@ -23,9 +23,9 @@ MODULE fspSolver
       CLASS(fspSolverType),INTENT(INOUT) :: solver
 
       ALLOCATE(solver%sweeper)
-      CALL populateData(solver%sweeper)
+      CALL populateData(solver%sweeper,solver%psi)
 
-      CALL solver%sweeper%initialize(solver%thisSource)
+      CALL solver%sweeper%initialize(solver%source)
 
     END SUBROUTINE initializeFspSolver
 !===============================================================================
@@ -43,11 +43,11 @@ MODULE fspSolver
 
       DO ig=solver%sweeper%igstt,solver%sweeper%igstp
         ! Set up source
-        CALL solver%thisSource%initExtSource(ig)
-        CALL solver%thisSource%computeMGFS(ig,solver%psi)
-        CALL solver%thisSource%updateInScatter( &
+        CALL solver%source%initExtSource(ig)
+        CALL solver%source%computeMGFS(ig,solver%psi)
+        CALL solver%source%updateInScatter( &
           ig,solver%sweeper%igstt,solver%sweeper%igstp)
-        CALL solver%sweeper%setExtSource(solver%thisSource)
+        CALL solver%sweeper%setExtSource(solver%source)
         ! Perform sweep
         CALL solver%sweeper%sweep(ig,3,1.0D-03)
       ENDDO
