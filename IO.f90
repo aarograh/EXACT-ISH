@@ -10,6 +10,7 @@ MODULE IO
 
   INTEGER,PARAMETER :: inpFileUnitNo=123
   INTEGER,PARAMETER :: solFileUnitNo=124
+  INTEGER,PARAMETER :: outFileUnitNo=125
 
   CONTAINS
 !===============================================================================
@@ -20,6 +21,7 @@ MODULE IO
       CALL GET_COMMAND_ARGUMENT(1,arg_in)
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo)
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.sol',UNIT=solFileUnitNo)
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.out',UNIT=outFileUnitNo)
 
     END SUBROUTINE processCmdLine
 !===============================================================================
@@ -27,11 +29,13 @@ MODULE IO
 
       CLOSE(UNIT=inpFileUnitNo)
       CLOSE(UNIT=solFileUnitNo)
+      CLOSE(UNIT=outFileUnitNo)
 
     END SUBROUTINE closeFiles
 !===============================================================================
-    SUBROUTINE populateData(sweeper)
+    SUBROUTINE populateData(sweeper,psi)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      DOUBLE PRECISION,POINTER,INTENT(INOUT) :: psi(:)
       ! Local variables
       INTEGER :: i,ii,iii,n1,n2,n3,n4,n5
 
@@ -43,14 +47,18 @@ MODULE IO
       ALLOCATE(sweeper%myXSMesh(n1))
 
       ! Read XSMeshType data
+      sweeper%nxsreg = n1
       DO i=1,n1
         READ(123,*) sweeper%myXSMesh(i)%nreg
         ALLOCATE(sweeper%myXSMesh(i)%ireg(sweeper%myXSMesh(i)%nreg))
         READ(123,*) sweeper%myXSMesh(i)%ireg
         ALLOCATE(sweeper%myXSMesh(i)%xsmactr(sweeper%ng))
         READ(123,*) sweeper%myXSMesh(i)%xsmactr
-        ALLOCATE(sweeper%myXSMesh(i)%xsmacchi(sweeper%ng))
-        READ(123,*) sweeper%myXSMesh(i)%xsmacchi
+        READ(123,*) n2,n3
+        IF(n2 <= n3 .AND. (n3 - n2 < sweeper%ng)) THEN
+          ALLOCATE(sweeper%myXSMesh(i)%xsmacchi(sweeper%ng))
+          READ(123,*) sweeper%myXSMesh(i)%xsmacchi
+        ENDIF
         ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(sweeper%ng,0:0))
         DO ii=1,sweeper%ng
           READ(123,*) sweeper%myXSMesh(i)%xsmacsc(ii,0)%gmin
@@ -72,6 +80,11 @@ MODULE IO
       READ(123,*) n1,n2
       ALLOCATE(sweeper%myModMesh%neigh(n1,n2))
       READ(123,*) sweeper%myModMesh%neigh
+
+      ! Read psi
+      READ(123,*) n1
+      ALLOCATE(psi(n1))
+      READ(123,*) psi
 
       ! Read ModMeshRayPtrArryType Data
       READ(123,*) n1
@@ -167,7 +180,7 @@ MODULE IO
           IF(i == 1) ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(n3))
           DO iii=1,n3
             READ(123,*) n4,n5
-            ALLOCATE(sweeper%phiang(i)%angle(ii)%face(iii)%angFlux(n4,n5))
+            ALLOCATE(sweeper%phiang(i)%angle(ii)%face(iii)%angFlux(n4,0:n5-1))
             READ(123,*) sweeper%phiang(i)%angle(ii)%face(iii)%angFlux
             IF(i == 1) &
               ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(iii)%angFlux(n4,n5))
@@ -188,5 +201,34 @@ MODULE IO
       READ(123,*) sweeper%vol
 
     END SUBROUTINE populateData
+!===============================================================================
+    SUBROUTINE validate(sweeper)
+      CLASS(sweeperType),INTENT(IN) :: sweeper
+      ! Local Variables
+      INTEGER :: nreg,ngroups,ireg,ig
+      DOUBLE PRECISION :: compval,diff,maxdiff,rmsdiff
+
+      READ(124,*) nreg,ngroups
+
+      maxdiff = 0.0D0
+      rmsdiff = 0.0D0
+      DO ig=1,ngroups
+        DO ireg=1,nreg
+          READ(124,*) compval
+          diff = sweeper%phis(ireg,ig) - compval
+          maxdiff = MAX(maxdiff,ABS(diff))
+          rmsdiff = rmsdiff + diff*diff
+        ENDDO !ireg
+      ENDDO !ig
+
+      rmsdiff = SQRT(rmsdiff)
+
+      WRITE(*,*)
+      WRITE(*,*) 'RMS Difference = ',rmsdiff
+      WRITE(*,*) 'Max Difference = ',maxdiff
+      WRITE(*,'(a,es22.17)') 'RMS Difference = ',rmsdiff
+      WRITE(*,'(a,es22.17)') 'Max Difference = ',maxdiff
+
+    END SUBROUTINE validate
 END MODULE IO
 
