@@ -63,7 +63,7 @@ MODULE IO
       ENDDO
 
       ! Read ModMeshType data
-      ALLOCATE(ModMeshType :: sweeper%myModMesh)
+      ALLOCATE(sweeper%myModMesh)
       READ(123,*) sweeper%myModMesh%nmesh
       ALLOCATE(sweeper%myModMesh%ifrstfsreg(sweeper%myModMesh%nmesh))
       DO i=1,sweeper%myModMesh%nmesh
@@ -84,6 +84,7 @@ MODULE IO
           READ(123,*) n3
           ALLOCATE(sweeper%rtmesh(i)%rtdat%angles(ii)%rays(n3))
           DO iii=1,n3
+            READ(123,*) sweeper%rtmesh(i)%rtdat%angles(ii)%rays(iii)%nseg
             READ(123,*) n4
             ALLOCATE(sweeper%rtmesh(i)%rtdat%angles(ii)%rays(iii)%ireg(n4))
             READ(123,*) sweeper%rtmesh(i)%rtdat%angles(ii)%rays(iii)%ireg
@@ -103,6 +104,7 @@ MODULE IO
         ALLOCATE(sweeper%longRayDat%angles(i)%longrays( &
           sweeper%longRayDat%nlongrays(i)))
         DO ii=1,sweeper%longRayDat%nlongrays(i)
+          READ(123,*) sweeper%longRayDat%angles(i)%longrays(ii)%nmods
           READ(123,*) sweeper%longRayDat%angles(i)%longrays(ii)%ifirstModMesh
           READ(123,*) sweeper%longRayDat%angles(i)%longrays(ii)%iside
           READ(123,*) sweeper%longRayDat%angles(i)%longrays(ii)%firstModRay
@@ -127,6 +129,8 @@ MODULE IO
       ENDDO
 
       ! Read Quadrature information
+      READ(123,*) sweeper%modRayDat%angquad%npol
+      READ(123,*) sweeper%modRayDat%angquad%nazi
       READ(123,*) n1
       ALLOCATE(sweeper%modRayDat%angquad%walpha(n1))
       READ(123,*) sweeper%modRayDat%angquad%walpha        
@@ -148,6 +152,7 @@ MODULE IO
       READ(123,*) n2
       ALLOCATE(sweeper%expTableDat%table2D(1:2,n1:n2))
       READ(123,*) sweeper%expTableDat%table2D
+      READ(123,*) sweeper%expTableDat%rdx
 
       ! Read AngFluxBC data
       READ(123,*) n1
@@ -155,13 +160,17 @@ MODULE IO
       DO i=1,n1
         READ(123,*) n2
         ALLOCATE(sweeper%phiang(i)%angle(n2))
+        IF(i == 1) ALLOCATE(sweeper%phiang1g_out%angle(n2))
         DO ii=1,n2
           READ(123,*) n3
           ALLOCATE(sweeper%phiang(i)%angle(ii)%face(n3))
+          IF(i == 1) ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(n3))
           DO iii=1,n3
             READ(123,*) n4,n5
             ALLOCATE(sweeper%phiang(i)%angle(ii)%face(iii)%angFlux(n4,n5))
             READ(123,*) sweeper%phiang(i)%angle(ii)%face(iii)%angFlux
+            IF(i == 1) &
+              ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(iii)%angFlux(n4,n5))
           ENDDO
         ENDDO
       ENDDO
@@ -171,6 +180,12 @@ MODULE IO
       sweeper%nreg = n1
       ALLOCATE(sweeper%phis(n1,n2))
       READ(123,*) sweeper%phis
+
+      ! Miscellaneous
+      READ(123,*) sweeper%maxsegray
+      READ(123,*) sweeper%myModMesh%nmesh,sweeper%imeshstt
+      ALLOCATE(sweeper%vol(sweeper%nreg))
+      READ(123,*) sweeper%vol
 
     END SUBROUTINE populateData
 END MODULE IO
