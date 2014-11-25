@@ -2,6 +2,7 @@ MODULE sweeperUtils
 
   IMPLICIT NONE
 
+  PUBLIC :: PI
   PUBLIC :: AngFluxBC
   PUBLIC :: SourceType
   PUBLIC :: SourceType_P0
@@ -10,6 +11,8 @@ MODULE sweeperUtils
   PUBLIC :: ModMeshRayPtrArryType
   PUBLIC :: XSMeshType
   PUBLIC :: ExpTableType
+
+  DOUBLE PRECISION :: PI=3.141592653589793D0
 
   TYPE :: AngFluxBCFace
     SEQUENCE
@@ -68,6 +71,8 @@ MODULE sweeperUtils
   END TYPE ModAngRayType
 
   TYPE :: AngQuadType
+    INTEGER :: npol
+    INTEGER :: nazi
     DOUBLE PRECISION,ALLOCATABLE :: walpha(:)
     DOUBLE PRECISION,ALLOCATABLE :: wtheta(:)
     DOUBLE PRECISION,ALLOCATABLE :: sinpolang(:)
@@ -83,6 +88,7 @@ MODULE sweeperUtils
 
   TYPE :: LongRayType_Base
     SEQUENCE
+    INTEGER :: nmods=0
     INTEGER :: ifirstModMesh=0
     INTEGER :: iside(2)=0
     INTEGER :: firstModRay=0
@@ -100,6 +106,7 @@ MODULE sweeperUtils
   END TYPE CoreLongRayType
 
   TYPE :: RayType
+    INTEGER :: nseg
     INTEGER,ALLOCATABLE :: ireg(:)
     DOUBLE PRECISION,ALLOCATABLE :: hseg(:)
   END TYPE RayType
@@ -132,7 +139,10 @@ MODULE sweeperUtils
   END TYPE XSMeshType
 
   TYPE :: ExpTableType
+    DOUBLE PRECISION :: rdx=0.0D0
     DOUBLE PRECISION,ALLOCATABLE :: table2D(:,:)
+    CONTAINS
+      PROCEDURE,PASS :: EXPT => EXPT_LINEAR
   END TYPE ExpTableType
 
   ABSTRACT INTERFACE
@@ -242,4 +252,16 @@ MODULE sweeperUtils
       ENDDO
 
     END SUBROUTINE updateInScatter_P0 
+!===============================================================================
+    ELEMENTAL FUNCTION EXPT_Linear(ET,x) RESULT(ans)
+      CLASS(ExpTableType),INTENT(IN) :: ET
+      DOUBLE PRECISION,INTENT(IN) :: x
+      DOUBLE PRECISION :: ans
+      ! Local Variables
+      INTEGER :: i
+
+      i = FLOOR(x*ET%rdx)
+      ans = ET%table2D(1,i)*x + ET%table2D(2,i)
+
+    END FUNCTION EXPT_Linear
 END MODULE sweeperUtils
