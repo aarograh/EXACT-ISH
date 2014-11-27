@@ -215,7 +215,7 @@ MODULE IO
       DO ig=1,ngroups
         DO ireg=1,nreg
           READ(124,*) compval
-          diff = sweeper%phis(ireg,ig) - compval
+          diff = (sweeper%phis(ireg,ig) - compval)/compval
           maxdiff = MAX(maxdiff,ABS(diff))
           rmsdiff = rmsdiff + diff*diff
         ENDDO !ireg
@@ -226,8 +226,6 @@ MODULE IO
       WRITE(*,*)
       WRITE(*,*) 'RMS Difference = ',rmsdiff
       WRITE(*,*) 'Max Difference = ',maxdiff
-      WRITE(*,'(a,es22.17)') 'RMS Difference = ',rmsdiff
-      WRITE(*,'(a,es22.17)') 'Max Difference = ',maxdiff
 
     END SUBROUTINE validate
 END MODULE IO
