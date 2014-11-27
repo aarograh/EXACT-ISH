@@ -1,5 +1,5 @@
 # File definitions
-SOURCES=sweeperUtils.f90 sweeper.f90 IO.f90 fspSolver.f90 EXACT-ISH.f90
+SOURCES=sweeperUtils.f90 sweeper.f90 IO.f90 openmp.f90 openacc.f90 fspSolver.f90 
 # Directory Definitions
 EMPTY=
 ifeq ($(source),$(EMPTY))
@@ -25,30 +25,39 @@ FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wa
 # Object Definitions
 OBJNAMES=$(SOURCES:.f90=.o)
 OBJECTS=$(addprefix $(OBJDIR)/, $(OBJNAMES))
+JIPUOBJ=jipu_main.o
+AARONOBJ=aaron_main.o
 # Include Definitions
 INCLUDE=-I$(OBJDIR)
 # Executable Definition
-EXECUTABLE=EXACT-ISH.exe
+EXECUTABLES=aaron jipu
+EXE1=jipu_main.exe $(OBJDIR)/jipu_main.o
+EXE2=aaron_main.exe $(OBJDIR)/aaron_main.o
 # Command Definitions
 RM=rm -rf
 MK=mkdir
 
 # Default target
 .PHONY: 
-all: $(OBJNAMES) 
-	@$(LINKER) $(EXECUTABLE) $(FLAGS) $(INCLUDE) $(OBJECTS)
+all: $(EXECUTABLES)
+
+jipu: $(OBJNAMES) $(JIPUOBJ)
+	$(LINKER) $(EXE1) $(FLAGS) $(INCLUDE) $(OBJECTS)
+
+aaron: $(OBJNAMES) $(AARONOBJ)
+	$(LINKER) $(EXE2) $(FLAGS) $(INCLUDE) $(OBJECTS)
 
 # Object file target
 %.o: %.f90 $(OBJDIR)
-	@$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $< 
+	$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $< 
 
 # Object directory target
 $(OBJDIR):
-	@$(MK) $(OBJDIR)
+	$(MK) $(OBJDIR)
 
 # Clean target
 .PHONY:
 clean:
-	@$(RM) $(EXECUTABLE)
-	@$(RM) $(OBJECTS)
-	@$(RM) $(OBJDIR)
+	$(RM) $(EXE2)
+	$(RM) $(OBJECTS)
+	$(RM) $(OBJDIR)
