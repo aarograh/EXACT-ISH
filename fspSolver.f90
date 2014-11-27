@@ -1,6 +1,8 @@
 MODULE fspSolver
 
   USE sweeper
+  USE openmp
+  USE openacc
   USE IO
 
   IMPLICIT NONE
@@ -26,6 +28,12 @@ MODULE fspSolver
       CALL populateData(solver%sweeper,solver%psi)
 
       CALL solver%sweeper%initialize(solver%source)
+
+      !TODO: put branching statements here to associate %sweep
+      ! with different kernels.
+      ! Branching should be based on something passed into
+      ! initializeFspSolver from main_aaron or main_jipu
+      solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
 
     END SUBROUTINE initializeFspSolver
 !===============================================================================

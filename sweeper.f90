@@ -1,6 +1,4 @@
 MODULE sweeper
-!TODO: CALL sweep2D_prodquad
-!TODO: mimic sweep loops
 !TODO: Add timers for these loops
 
   USE sweeperUtils
@@ -8,6 +6,7 @@ MODULE sweeper
   IMPLICIT NONE
 
   PUBLIC :: sweeperType
+  PUBLIC :: sweep2D_prodquad_P0
 
   TYPE :: sweeperType
     LOGICAL :: hasSource=.FALSE.
@@ -45,6 +44,7 @@ MODULE sweeper
     PROCEDURE(absintfc_sweep2Dprodquad),POINTER :: sweep2D_prodquad => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeSweeper
+! Not needed unless we decide to add a power iteration
 !      PROCEDURE,PASS :: calcFissionSrc
   END TYPE sweeperType
 
@@ -102,7 +102,6 @@ MODULE sweeper
 
       sweeper%sweep => MOCSolver_sweep1G
       sweeper%setExtSource => setExtSource_MOCP0
-      sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
 
     END SUBROUTINE initializeSweeper
 !===============================================================================
@@ -199,10 +198,12 @@ MODULE sweeper
         ENDDO !i
 
         sweeper%phis(:,ig) = sweeper%phis1g
-IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
-DO i=1,sweeper%nreg
-WRITE(125,*) sweeper%phis1g(i)
-ENDDO
+
+        ! Write to output file for comparison
+        IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
+        DO i=1,sweeper%nreg
+          WRITE(125,*) sweeper%phis1g(i)
+        ENDDO
         ! Another updateBC%Finish here
         ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
 
