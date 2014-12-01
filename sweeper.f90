@@ -4,6 +4,7 @@ MODULE sweeper
   USE sweeperUtils
 
   IMPLICIT NONE
+!   PRIVATE
 
   PUBLIC :: sweeperType
   PUBLIC :: sweep2D_prodquad_P0
@@ -28,13 +29,13 @@ MODULE sweeper
     DOUBLE PRECISION,POINTER :: vol(:) => NULL()
     DOUBLE PRECISION,POINTER :: qbar(:) => NULL()
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
-    TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL() 
+    TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
-    TYPE(AngFluxBC),POINTER :: phiang(:) 
+    TYPE(AngFluxBC),POINTER :: phiang(:)
     TYPE(SourceType_P0),POINTER :: mySrc => NULL()
-    TYPE(ModMeshType),POINTER :: myModMesh => NULL() 
+    TYPE(ModMeshType),POINTER :: myModMesh => NULL()
     TYPE(ModularRayType),POINTER :: modRayDat
-    TYPE(CoreLongRayType) :: longRayDat 
+    TYPE(CoreLongRayType) :: longRayDat
     TYPE(ModMeshRayPtrArryType),POINTER :: rtmesh(:) => NULL()
     TYPE(XSMeshType),POINTER :: myXSMesh(:)
     TYPE(ExpTableType),ALLOCATABLE :: expTableDat
@@ -100,7 +101,7 @@ MODULE sweeper
       ALLOCATE(sweeper%qbar(sweeper%nreg))
       ALLOCATE(sweeper%xstr(sweeper%nreg))
 
-      sweeper%sweep => MOCSolver_sweep1G
+      sweeper%sweep => MOCSolver_Sweep1G
       sweeper%setExtSource => setExtSource_MOCP0
 
     END SUBROUTINE initializeSweeper
@@ -128,7 +129,7 @@ MODULE sweeper
 !            ENDDO
 !          endif
 !TODO: calcMacroChi?
-!          
+!
 !
 !    END SUBROUTINE calcFissionSrc
 !===============================================================================

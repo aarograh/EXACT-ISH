@@ -3,10 +3,12 @@ MODULE IO
   USE sweeper
 
   IMPLICIT NONE
+  PRIVATE
 
   PUBLIC :: processCmdLine
   PUBLIC :: closeFiles
   PUBLIC :: populateData
+  PUBLIC :: validate
 
   INTEGER,PARAMETER :: inpFileUnitNo=123
   INTEGER,PARAMETER :: solFileUnitNo=124
@@ -146,15 +148,15 @@ MODULE IO
       READ(123,*) sweeper%modRayDat%angquad%nazi
       READ(123,*) n1
       ALLOCATE(sweeper%modRayDat%angquad%walpha(n1))
-      READ(123,*) sweeper%modRayDat%angquad%walpha        
+      READ(123,*) sweeper%modRayDat%angquad%walpha
       READ(123,*) n1
       ALLOCATE(sweeper%modRayDat%angquad%wtheta(n1))
       READ(123,*) sweeper%modRayDat%angquad%wtheta
       READ(123,*) n1
       ALLOCATE(sweeper%modRayDat%angquad%sinpolang(n1))
-      READ(123,*) sweeper%modRayDat%angquad%sinpolang       
+      READ(123,*) sweeper%modRayDat%angquad%sinpolang
       ALLOCATE(sweeper%modRayDat%angquad%rsinpolang(n1))
-      READ(123,*) sweeper%modRayDat%angquad%rsinpolang       
+      READ(123,*) sweeper%modRayDat%angquad%rsinpolang
 
       ! Read pz data
       READ(123,*) sweeper%pz
