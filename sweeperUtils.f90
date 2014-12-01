@@ -1,6 +1,7 @@
 MODULE sweeperUtils
 
   IMPLICIT NONE
+  !PRIVATE
 
   PUBLIC :: PI
   PUBLIC :: AngFluxBC
@@ -150,7 +151,7 @@ MODULE sweeperUtils
       IMPORT :: Sourcetype
       CLASS(SourceType),INTENT(INOUT) :: thisSrc
       INTEGER,INTENT(IN) :: ig
-    END SUBROUTINE absintfc_initExtSource 
+    END SUBROUTINE absintfc_initExtSource
   END INTERFACE
 
   ABSTRACT INTERFACE
@@ -251,7 +252,7 @@ MODULE sweeperUtils
         ENDDO
       ENDDO
 
-    END SUBROUTINE updateInScatter_P0 
+    END SUBROUTINE updateInScatter_P0
 !===============================================================================
     ELEMENTAL FUNCTION EXPT_Linear(ET,x) RESULT(ans)
       CLASS(ExpTableType),INTENT(IN) :: ET

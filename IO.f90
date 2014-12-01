@@ -3,6 +3,7 @@ MODULE IO
   USE sweeper
 
   IMPLICIT NONE
+  PRIVATE
 
   PUBLIC :: processCmdLine
   PUBLIC :: closeFiles

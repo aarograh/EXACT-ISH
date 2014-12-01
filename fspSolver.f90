@@ -6,6 +6,7 @@ MODULE fspSolver
   USE IO
 
   IMPLICIT NONE
+  PRIVATE
 
   PUBLIC :: fspSolverType
 
