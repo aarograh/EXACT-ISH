@@ -284,8 +284,34 @@ MODULE sweeperUtils
       INTEGER,INTENT(IN) :: iang
       TYPE(AngFluxBC),INTENT(INOUT) :: outgoing
       TYPE(AngFluxBC),INTENT(INOUT) :: incoming
+      ! Local Variables
+      INTEGER,PARAMETER :: VACUUMBC=0
+      INTEGER,PARAMETER :: REFLECTIVEBC=1
+      INTEGER,PARAMETER :: PERIODICBC=2
+      INTEGER,PARAMETER :: PARALLELBC=3
+      INTEGER,PARAMETER :: REENTRANTBC=4
+      INTEGER,PARAMETER :: ANTISYMMBC=5
+      INTEGER :: iface,irefl
 
- 
+      DO iface=1,thisBCU%nfaces
+        irefl = thisBCU%iang2irefl(iface,iang)
+
+        SELECTCASE(thisBCU%bcType(iface))
+          CASE(VACUUMBC)
+            CONTINUE
+          CASE(REFLECTIVEBC)
+            incoming%angle(irefl)%face(iface)%angflux = &
+              outgoing%angle(iang)%face(iface)%angflux
+          CASE(PERIODICBC)
+            STOP 666
+          CASE(PARALLELBC)
+            incoming%angle(irefl)%face(iface)%angflux = &
+              outgoing%angle(iang)%face(iface)%angflux
+          CASE(ANTISYMMBC)
+            STOP 667
+        END SELECT
+
+      ENDDO !iface
 
    END SUBROUTINE UpdateBC_Start
 !===============================================================================
