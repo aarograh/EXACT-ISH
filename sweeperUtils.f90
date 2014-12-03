@@ -153,7 +153,7 @@ MODULE sweeperUtils
     INTEGER :: nangles=-1
     INTEGER :: iangstt=-1
     INTEGER :: iangstp=-1
-    INTEGER,ALLOCATABLE :: ang2irefl(:,:)
+    INTEGER,ALLOCATABLE :: iang2irefl(:,:)
     CONTAINS
       PROCEDURE,PASS :: start => UpdateBC_Start
       PROCEDURE,PASS :: finish => UpdateBC_Finish
