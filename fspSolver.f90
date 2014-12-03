@@ -58,7 +58,7 @@ MODULE fspSolver
           ig,solver%sweeper%igstt,solver%sweeper%igstp)
         CALL solver%sweeper%setExtSource(solver%source)
         ! Perform sweep
-        CALL solver%sweeper%sweep(ig,3,1.0D-03)
+        CALL solver%sweeper%sweep(ig,1,1.0D-03)
       ENDDO
 
     END SUBROUTINE stepFspSolver
