@@ -185,7 +185,7 @@ MODULE IO
             ALLOCATE(sweeper%phiang(i)%angle(ii)%face(iii)%angFlux(n4,0:n5-1))
             READ(inpFileUnitNo,*) sweeper%phiang(i)%angle(ii)%face(iii)%angFlux
             IF(i == 1) &
-              ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(iii)%angFlux(n4,n5))
+              ALLOCATE(sweeper%phiang1g_out%angle(ii)%face(iii)%angFlux(n4,0:n5-1))
           ENDDO
         ENDDO
       ENDDO
