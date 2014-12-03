@@ -146,6 +146,19 @@ MODULE sweeperUtils
       PROCEDURE,PASS :: EXPT => EXPT_LINEAR
   END TYPE ExpTableType
 
+  TYPE :: UpdateBCType_MOC
+    INTEGER :: offset=-1
+    INTEGER :: nfaces=-1
+    INTEGER :: bcType(6)=-1
+    INTEGER :: nangles=-1
+    INTEGER :: iangstt=-1
+    INTEGER :: iangstp=-1
+    INTEGER,ALLOCATABLE :: ang2irefl(:,:)
+    CONTAINS
+      PROCEDURE,PASS :: start => UpdateBC_Start
+      PROCEDURE,PASS :: finish => UpdateBC_Finish
+  END TYPE UpdateBCType_MOC
+
   ABSTRACT INTERFACE
     SUBROUTINE absintfc_initExtSource(thisSrc,ig)
       IMPORT :: Sourcetype
@@ -265,4 +278,19 @@ MODULE sweeperUtils
       ans = ET%table2D(1,i)*x + ET%table2D(2,i)
 
     END FUNCTION EXPT_Linear
+!===============================================================================
+    SUBROUTINE UpdateBC_Start(thisBCU,iang,outgoing,incoming)
+      CLASS(UpdateBCType_MOC),INTENT(IN) :: thisBCU
+      INTEGER,INTENT(IN) :: iang
+      TYPE(AngFluxBC),INTENT(INOUT) :: outgoing
+      TYPE(AngFluxBC),INTENT(INOUT) :: incoming
+
+ 
+
+   END SUBROUTINE UpdateBC_Start
+!===============================================================================
+    SUBROUTINE UpdateBC_Finish(thisBCU)
+      CLASS(UpdateBCType_MOC),INTENT(IN) :: thisBCU
+
+    END SUBROUTINE UpdateBC_Finish
 END MODULE sweeperUtils
