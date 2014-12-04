@@ -42,7 +42,7 @@ MODULE IO
       INTEGER :: i,ii,iii,n1,n2,n3,n4,n5
 
       ! Read number of groups and size of XS mesh
-      READ(inpFileUnitNo,*) n1,n2,n3
+      READ(inpFileUnitNo,*) n1,n2,n3,n4
       sweeper%ng=n3-n2+1
       sweeper%igstt=n2
       sweeper%igstp=n3
@@ -57,18 +57,20 @@ MODULE IO
         ALLOCATE(sweeper%myXSMesh(i)%xsmactr(sweeper%ng))
         READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmactr
         READ(inpFileUnitNo,*) n2,n3
-        IF(n2 <= n3 .AND. (n3 - n2 < sweeper%ng)) THEN
+        IF(n2 > 0 .AND. n2 <= n3 .AND. n3 <= sweeper%ng) THEN
           ALLOCATE(sweeper%myXSMesh(i)%xsmacchi(sweeper%ng))
           READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacchi
         ENDIF
-        ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(sweeper%ng,0:0))
-        DO ii=1,sweeper%ng
-          READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(ii,0)%gmin
-          READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(ii,0)%gmax
-          ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(ii,0)%from( &
-            sweeper%myXSMesh(i)%xsmacsc(ii,0)%gmin: &
-            sweeper%myXSMesh(i)%xsmacsc(ii,0)%gmax))
-          READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(ii,0)%from
+        ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(sweeper%ng,0:n4))
+        DO ii=0,n4
+          DO iii=1,sweeper%ng
+            READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin
+            READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax
+            ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from( &
+              sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin: &
+              sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax))
+            READ(inpFileUnitNo,*) sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from
+          ENDDO
         ENDDO
       ENDDO
 
