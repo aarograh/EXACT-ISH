@@ -203,7 +203,7 @@ MODULE sweeper
         ! Write to output file for comparison
         IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
         DO i=1,sweeper%nreg
-          WRITE(125,*) sweeper%phis1g(i)
+          WRITE(125,*) sweeper%phis(i,ig)
         ENDDO
 
         ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
