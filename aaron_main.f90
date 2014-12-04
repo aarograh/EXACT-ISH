@@ -6,6 +6,7 @@ PROGRAM aaron_main
   IMPLICIT NONE
 
   TYPE(fspSolverType) :: solver
+  INTEGER,PARAMETER :: BASESOLVER = 1
 
   WRITE(*,*)
   WRITE(*,*) '======================================'
