@@ -18,7 +18,7 @@ MODULE IO
 !===============================================================================
     SUBROUTINE processCmdLine()
       ! Local Variables
-      CHARACTER(LEN=16) :: arg_in
+      CHARACTER(LEN=24) :: arg_in
 
       CALL GET_COMMAND_ARGUMENT(1,arg_in)
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo)
