@@ -39,7 +39,7 @@ MODULE sweeper
     TYPE(ModMeshRayPtrArryType),POINTER :: rtmesh(:) => NULL()
     TYPE(XSMeshType),POINTER :: myXSMesh(:)
     TYPE(ExpTableType),ALLOCATABLE :: expTableDat
-!    TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
+    TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
     PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
     PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
     PROCEDURE(absintfc_sweep2Dprodquad),POINTER :: sweep2D_prodquad => NULL()
@@ -205,8 +205,9 @@ MODULE sweeper
         DO i=1,sweeper%nreg
           WRITE(125,*) sweeper%phis1g(i)
         ENDDO
-        ! Another updateBC%Finish here
+
         ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
+        CALL sweeper%UpdateBC%Finish()
 
         ! hasSource = .FALSE.
       ENDIF
@@ -292,11 +293,9 @@ MODULE sweeper
             phio2(nseglray+1) = &
               sweeper%phiang1g_in%angle(iang)%face(is2)%angflux(ipol,ibc2)
             iseg2 = nseglray + 1
-!WRITE(*,*) ilray,iang,ipol,ibc1,ibc2,':',phio1(0),phio2(nseglray+1)
 
             DO iseg1=1,nseglray
               iseg2 = iseg2 - 1
-!WRITE(*,*) ilray,ipol,iseg1,iseg2,':',phio1(iseg1-1),phio2(iseg2+1)
 
               ireg1 = irg_seg(iseg1)
               phid1 = phio1(iseg1-1) - sweeper%qbar(ireg1)
@@ -314,14 +313,13 @@ MODULE sweeper
             sweeper%phiang1g_out%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
               phio2(1)
             sweeper%phiang1g_out%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
-              phio2(nseglray)
+              phio1(nseglray)
           ENDDO !ipol
         ENDDO !ilray
 
         tphi(:,ithd) = tphi(:,ithd) + phibar
-!        CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
+        CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
       ENDDO !iang
-!WRITE(*,*) phibar
 
       DEALLOCATE(phibar)
 

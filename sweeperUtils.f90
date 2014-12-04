@@ -146,6 +146,19 @@ MODULE sweeperUtils
       PROCEDURE,PASS :: EXPT => EXPT_LINEAR
   END TYPE ExpTableType
 
+  TYPE :: UpdateBCType_MOC
+    INTEGER :: offset=-1
+    INTEGER :: nfaces=-1
+    INTEGER :: bcType(6)=-1
+    INTEGER :: nangles=-1
+    INTEGER :: iangstt=-1
+    INTEGER :: iangstp=-1
+    INTEGER,ALLOCATABLE :: iang2irefl(:,:)
+    CONTAINS
+      PROCEDURE,PASS :: start => UpdateBC_Start
+      PROCEDURE,PASS :: finish => UpdateBC_Finish
+  END TYPE UpdateBCType_MOC
+
   ABSTRACT INTERFACE
     SUBROUTINE absintfc_initExtSource(thisSrc,ig)
       IMPORT :: Sourcetype
@@ -265,4 +278,45 @@ MODULE sweeperUtils
       ans = ET%table2D(1,i)*x + ET%table2D(2,i)
 
     END FUNCTION EXPT_Linear
+!===============================================================================
+    SUBROUTINE UpdateBC_Start(thisBCU,iang,outgoing,incoming)
+      CLASS(UpdateBCType_MOC),INTENT(IN) :: thisBCU
+      INTEGER,INTENT(IN) :: iang
+      TYPE(AngFluxBC),INTENT(INOUT) :: outgoing
+      TYPE(AngFluxBC),INTENT(INOUT) :: incoming
+      ! Local Variables
+      INTEGER,PARAMETER :: VACUUMBC=0
+      INTEGER,PARAMETER :: REFLECTIVEBC=1
+      INTEGER,PARAMETER :: PERIODICBC=2
+      INTEGER,PARAMETER :: PARALLELBC=3
+      INTEGER,PARAMETER :: REENTRANTBC=4
+      INTEGER,PARAMETER :: ANTISYMMBC=5
+      INTEGER :: iface,irefl
+
+      DO iface=1,thisBCU%nfaces
+        irefl = thisBCU%iang2irefl(iface,iang)
+
+        SELECTCASE(thisBCU%bcType(iface))
+          CASE(VACUUMBC)
+            CONTINUE
+          CASE(REFLECTIVEBC)
+            incoming%angle(irefl)%face(iface)%angflux = &
+              outgoing%angle(iang)%face(iface)%angflux
+          CASE(PERIODICBC)
+            STOP 666
+          CASE(PARALLELBC)
+            incoming%angle(irefl)%face(iface)%angflux = &
+              outgoing%angle(iang)%face(iface)%angflux
+          CASE(ANTISYMMBC)
+            STOP 667
+        END SELECT
+
+      ENDDO !iface
+
+   END SUBROUTINE UpdateBC_Start
+!===============================================================================
+    SUBROUTINE UpdateBC_Finish(thisBCU)
+      CLASS(UpdateBCType_MOC),INTENT(IN) :: thisBCU
+
+    END SUBROUTINE UpdateBC_Finish
 END MODULE sweeperUtils
