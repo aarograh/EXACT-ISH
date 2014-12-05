@@ -36,6 +36,7 @@ MODULE fspSolver
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
         CASE DEFAULT
           WRITE(*,*) 'Something went wrong when selecting the solver type.'
+          STOP 666
       END SELECT
 
     END SUBROUTINE initializeFspSolver

@@ -5,19 +5,20 @@ PROGRAM jipu_main
 
   IMPLICIT NONE
 
+  INTEGER :: solveType=0
   TYPE(fspSolverType) :: solver
 
   WRITE(*,*)
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Processing command line arguments...'
   WRITE(*,*) '======================================'
-  CALL processCmdLine()
+  CALL processCmdLine(solveType)
 
   WRITE(*,*)
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Initializing solvers...'
   WRITE(*,*) '======================================'
-  CALL solver%initialize(BASESOLVER)
+  CALL solver%initialize(solveType)
 
   WRITE(*,*)
   WRITE(*,*) '======================================'

@@ -19,7 +19,8 @@ MODULE IO
 
   CONTAINS
 !===============================================================================
-    SUBROUTINE processCmdLine()
+    SUBROUTINE processCmdLine(sweepType)
+      INTEGER,INTENT(INOUT) :: sweepType
       ! Local Variables
       CHARACTER(LEN=24) :: arg_in
 
@@ -29,6 +30,14 @@ MODULE IO
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.sol',UNIT=solFileUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.out',UNIT=outFileUnitNo)
+
+      IF(COMMAND_ARGUMENT_COUNT() == 2) THEN
+        arg_in = ''
+        CALL GET_COMMAND_ARGUMENT(2,arg_in)
+        READ(arg_in,*) sweepType
+      ELSE
+        sweepType = BASESOLVER
+      ENDIF
 
     END SUBROUTINE processCmdLine
 !===============================================================================
