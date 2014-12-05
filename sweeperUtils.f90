@@ -14,6 +14,9 @@ MODULE sweeperUtils
   PUBLIC :: ExpTableType
 
   DOUBLE PRECISION :: PI=3.141592653589793D0
+  INTEGER,PARAMETER :: SINGLE_LEVEL_EXP_TABLE=1
+  INTEGER,PARAMETER :: TWO_LEVEL_EXP_TABLE=2
+  INTEGER,PARAMETER :: LINEAR_EXP_TABLE=3
 
   TYPE :: AngFluxBCFace
     SEQUENCE
@@ -140,10 +143,13 @@ MODULE sweeperUtils
   END TYPE XSMeshType
 
   TYPE :: ExpTableType
+    INTEGER :: tableType=LINEAR_EXP_TABLE
+    DOUBLE PRECISION :: minVal=1.0D0
+    DOUBLE PRECISION :: maxVal=0.0D0
     DOUBLE PRECISION :: rdx=0.0D0
     DOUBLE PRECISION,ALLOCATABLE :: table2D(:,:)
     CONTAINS
-      PROCEDURE,PASS :: EXPT => EXPT_LINEAR
+      PROCEDURE,PASS :: EXPT
   END TYPE ExpTableType
 
   TYPE :: UpdateBCType_MOC
@@ -201,6 +207,7 @@ MODULE sweeperUtils
       qbar = thisSrc%qi1g
       ! Assumes no XS splitting (See SourceTypes.f90:470
       DO ix=1,thisSrc%nxsreg
+!WRITE(*,*) ix,ig,':',SIZE(thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from)
         xssgg = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig)
         xstrg = thisSrc%myXSMesh(ix)%xsmactr(ig)
         rxstrg4pi = r4pi/xstrg
@@ -267,13 +274,37 @@ MODULE sweeperUtils
 
     END SUBROUTINE updateInScatter_P0
 !===============================================================================
-    ELEMENTAL FUNCTION EXPT_Linear(ET,x) RESULT(ans)
+    FUNCTION EXPT(ET,x) RESULT(ans)
       CLASS(ExpTableType),INTENT(IN) :: ET
       DOUBLE PRECISION,INTENT(IN) :: x
       DOUBLE PRECISION :: ans
       ! Local Variables
-      INTEGER :: i
 
+      IF(ET%minVal <= x .AND. x <= ET%maxVal) THEN
+        SELECTCASE(ET%tableType)
+          CASE(SINGLE_LEVEL_EXP_TABLE)
+          CASE(TWO_LEVEL_EXP_TABLE)
+          CASE(LINEAR_EXP_TABLE)
+            ans = EXPT_Linear(ET,x)
+          CASE DEFAULT
+            ans=1.0D0 - EXP(X)
+        END SELECT
+      ELSE
+        IF(x < -700.0D0) THEN
+          ans = 1.0D0
+        ELSE
+          ans = 1.0D0 - EXP(x)
+        ENDIF
+      ENDIF
+
+    END FUNCTION EXPT
+!===============================================================================
+    ELEMENTAL FUNCTION EXPT_Linear(ET,x) RESULT(ans)
+      CLASS(ExpTableType),INTENT(IN) :: ET
+      DOUBLE PRECISION,INTENT(IN) :: x
+      DOUBLE PRECISION :: ans
+      INTEGER :: i
+   
       i = FLOOR(x*ET%rdx)
       ans = ET%table2D(1,i)*x + ET%table2D(2,i)
 
