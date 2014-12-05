@@ -1,0 +1,51 @@
+CASEID 3x3_asy_3x3_pin_56g
+
+MATERIAL
+  mat  1 2 :: UO2-3.3
+  mat  6 0 :: GuideTube
+  mat  7 0 :: Moderator
+
+GEOM
+
+ !Loads pin modular ray tracing and all pin types
+ !Module 1 - UO2-3.3 pin
+ !Module 6 - Guide Tube pin
+ !Module 7 - Reflector pin
+
+ mod_dim 2*3.78 1.26
+ pinMesh 1 cyl 0.540 0.62 / 1.26 / 1.26 / 5 2 / 5*8 2*8 8 / 1
+ pin 1 1 / 1 6 7
+
+ module 1 2*3 1
+   1 1 1
+   1 1 1
+   1 1 1
+
+ lattice 1 2*1
+   1
+
+ assembly 1
+   1
+  
+ core 360
+   1 1 1
+   1 1 1
+   1 1 1
+
+XSEC
+  addpath ../
+  xslib USER 49g.xsl
+  !xslib ORNL declib56g_e7_09042013_p0mixed.fmt
+  xsshielder F
+
+OPTION
+  bound_cond 1 1 1 1 1 1
+  solver 1 2
+  cmfd F
+  ray 0.1 CHEBYSHEV-GAUSS 16 4
+  parallel 1 1 1 1
+  conv_crit 2*1.e-6
+  iter_lim 2000 2 1
+  vis_edits F 
+  validation T C
+.                                                                                                                                                                                                                                                               
