@@ -71,6 +71,8 @@ MODULE IO
             ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from( &
               sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin: &
               sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax))
+!IF(i == 1) WRITE(*,*) i,ii,iii,':',sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin, &
+!sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax
             READ(inpFileUnitNo) sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from
           ENDDO
         ENDDO
@@ -167,6 +169,8 @@ MODULE IO
 
       ! Read Exponential Tables data
       ALLOCATE(sweeper%expTableDat)
+      READ(inpFileUnitNo) sweeper%expTableDat%minVal
+      READ(inpFileUnitNo) sweeper%expTableDat%maxVal
       READ(inpFileUnitNo) n1
       READ(inpFileUnitNo) n2
       ALLOCATE(sweeper%expTableDat%table2D(1:2,n1:n2))
