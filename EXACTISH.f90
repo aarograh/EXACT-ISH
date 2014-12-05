@@ -1,4 +1,4 @@
-PROGRAM aaron_main
+PROGRAM EXACTISH
 
   USE IO
   USE fspSolver
@@ -38,4 +38,4 @@ PROGRAM aaron_main
   WRITE(*,*) '======================================'
   CALL closeFiles()
 
-END PROGRAM aaron_main
+END PROGRAM EXACTISH
