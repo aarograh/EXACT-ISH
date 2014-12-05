@@ -17,7 +17,7 @@ PROGRAM jipu_main
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Initializing solvers...'
   WRITE(*,*) '======================================'
-  CALL solver%initialize()
+  CALL solver%initialize(BASESOLVER)
 
   WRITE(*,*)
   WRITE(*,*) '======================================'

@@ -6,7 +6,6 @@ PROGRAM aaron_main
   IMPLICIT NONE
 
   TYPE(fspSolverType) :: solver
-  INTEGER,PARAMETER :: BASESOLVER = 1
 
   WRITE(*,*)
   WRITE(*,*) '======================================'
@@ -18,7 +17,7 @@ PROGRAM aaron_main
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Initializing solvers...'
   WRITE(*,*) '======================================'
-  CALL solver%initialize()
+  CALL solver%initialize(BASESOLVER)
 
   WRITE(*,*)
   WRITE(*,*) '======================================'

@@ -50,12 +50,13 @@ MODULE sweeper
   END TYPE sweeperType
 
   ABSTRACT INTERFACE
-    SUBROUTINE absintfc_sweep(sweeper,ig,ninners,tol)
-      IMPORT sweeperType
+    SUBROUTINE absintfc_sweep(sweeper,ninners,tol,source,psi)
+      IMPORT sweeperType,SourceType
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
-      INTEGER,INTENT(IN) :: ig
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
+      CLASS(SourceType),INTENT(INOUT) :: source
+      DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
     END SUBROUTINE absintfc_sweep
   END INTERFACE
 
@@ -169,48 +170,60 @@ MODULE sweeper
 
     END SUBROUTINE MOCSolver_Setup1GFSP
 !===============================================================================
-    SUBROUTINE MOCSolver_Sweep1G(sweeper,ig,ninners,tol)
+    SUBROUTINE MOCSolver_Sweep1G(sweeper,ninners,tol,source,psi)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
-      INTEGER,INTENT(IN) :: ig
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
+      CLASS(SourceType),INTENT(INOUT) :: source
+      DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
-      INTEGER :: i
+      INTEGER :: i,ig
 
-      IF(1 <= ig .AND. ig <= sweeper%ng) THEN
-        sweeper%activeg = ig
-        sweeper%phiang1g_in => sweeper%phiang(ig)
-        sweeper%phis1g = sweeper%phis(:,ig)
-
-        DO i=1,ninners
-          sweeper%nsweeps = sweeper%nsweeps + 1
-          !IF(i == ninners) sweeper%sweepCur=.TRUE.
-          CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
-          CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
-            sweeper%phis1g,sweeper%nreg,sweeper%xstr,sweeper%qbar,ig)
-          sweeper%phis1gd = sweeper%phis1g
-
-          sweeper%phis1g = 0.0D0
-
-          ! There's an call to sweeper%UpdateBC%finishi here for i > 1
-
-          ! Assumes sweeper%sweepCur == .FALSE.
-          CALL sweeper%sweep2D_prodquad(i)
-        ENDDO !i
-
-        sweeper%phis(:,ig) = sweeper%phis1g
-
-        ! Write to output file for comparison
-        IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
-        DO i=1,sweeper%nreg
-          WRITE(125,*) sweeper%phis(i,ig)
-        ENDDO
-
-        ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
-        CALL sweeper%UpdateBC%Finish()
-
-        ! hasSource = .FALSE.
-      ENDIF
+      ! Group loop.  This is actualy in FixedSrcSolver in MPACT
+      DO ig=1,sweeper%ng
+        ! Set up source
+        CALL source%initExtSource(ig)
+        CALL source%computeMGFS(ig,psi)
+        CALL source%updateInScatter( &
+          ig,sweeper%igstt,sweeper%igstp)
+        CALL sweeper%setExtSource(source)
+        
+        ! This is the real beginning of the sweep routines in MPACT
+        IF(1 <= ig .AND. ig <= sweeper%ng) THEN
+          sweeper%activeg = ig
+          sweeper%phiang1g_in => sweeper%phiang(ig)
+          sweeper%phis1g = sweeper%phis(:,ig)
+  
+          DO i=1,ninners
+            sweeper%nsweeps = sweeper%nsweeps + 1
+            !IF(i == ninners) sweeper%sweepCur=.TRUE.
+            CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
+            CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
+              sweeper%phis1g,sweeper%nreg,sweeper%xstr,sweeper%qbar,ig)
+            sweeper%phis1gd = sweeper%phis1g
+  
+            sweeper%phis1g = 0.0D0
+  
+            ! There's an call to sweeper%UpdateBC%finishi here for i > 1
+  
+            ! Assumes sweeper%sweepCur == .FALSE.
+            CALL sweeper%sweep2D_prodquad(i)
+          ENDDO !i
+  
+          sweeper%phis(:,ig) = sweeper%phis1g
+  
+          ! Write to output file for comparison
+          IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
+          DO i=1,sweeper%nreg
+            WRITE(125,*) sweeper%phis(i,ig)
+          ENDDO
+  
+          ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
+          CALL sweeper%UpdateBC%Finish()
+  
+          ! hasSource = .FALSE.
+        ENDIF
+      ENDDO !ig
 
     END SUBROUTINE MOCSolver_Sweep1G
 !===============================================================================

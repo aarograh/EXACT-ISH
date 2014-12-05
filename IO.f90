@@ -9,10 +9,13 @@ MODULE IO
   PUBLIC :: closeFiles
   PUBLIC :: populateData
   PUBLIC :: validate
+  PUBLIC :: BASESOLVER
 
   INTEGER,PARAMETER :: inpFileUnitNo=123
   INTEGER,PARAMETER :: solFileUnitNo=124
   INTEGER,PARAMETER :: outFileUnitNo=125
+
+  INTEGER,PARAMETER :: BASESOLVER = 1
 
   CONTAINS
 !===============================================================================

@@ -22,19 +22,21 @@ MODULE fspSolver
 
   CONTAINS
 !===============================================================================
-    SUBROUTINE initializeFspSolver(solver)
+    SUBROUTINE initializeFspSolver(solver,sweepType)
       CLASS(fspSolverType),INTENT(INOUT) :: solver
+      INTEGER,INTENT(IN) :: sweepType
 
       ALLOCATE(solver%sweeper)
       CALL populateData(solver%sweeper,solver%psi)
 
       CALL solver%sweeper%initialize(solver%source)
 
-      !TODO: put branching statements here to associate %sweep
-      ! with different kernels.
-      ! Branching should be based on something passed into
-      ! initializeFspSolver from main_aaron or main_jipu
-      solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
+      SELECTCASE(sweepType)
+        CASE(BASESOLVER)
+          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
+        CASE DEFAULT
+          WRITE(*,*) 'Something went wrong when selecting the solver type.'
+      END SELECT
 
     END SUBROUTINE initializeFspSolver
 !===============================================================================
@@ -47,19 +49,9 @@ MODULE fspSolver
 !===============================================================================
     SUBROUTINE stepFspSolver(solver)
       CLASS(fspSolverType),INTENT(INOUT) :: solver
-      ! Local Variables
-      INTEGER :: ig
 
-      DO ig=solver%sweeper%igstt,solver%sweeper%igstp
-        ! Set up source
-        CALL solver%source%initExtSource(ig)
-        CALL solver%source%computeMGFS(ig,solver%psi)
-        CALL solver%source%updateInScatter( &
-          ig,solver%sweeper%igstt,solver%sweeper%igstp)
-        CALL solver%sweeper%setExtSource(solver%source)
-        ! Perform sweep
-        CALL solver%sweeper%sweep(ig,1,1.0D-03)
-      ENDDO
+      ! Perform sweep
+      CALL solver%sweeper%sweep(1,1.0D-03,solver%source,solver%psi)
 
     END SUBROUTINE stepFspSolver
 END MODULE fspSolver
