@@ -243,7 +243,7 @@ MODULE sweeper
       DOUBLE PRECISION :: &
         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
-      TYPE(LongRayType_Base) :: ilongray
+      TYPE(LongRayType_Base) :: ilongRay
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
