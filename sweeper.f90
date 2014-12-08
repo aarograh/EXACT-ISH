@@ -313,12 +313,16 @@ MODULE sweeper
               ireg1 = irg_seg(iseg1)
               phid1 = phio1(iseg1-1) - sweeper%qbar(ireg1)
               phid1 = phid1*exparg(iseg1,ipol)
+              !phio1 stores the outgoing angular flux to be used for the next
+              !segment as incoming angular flux.
               phio1(iseg1) = phio1(iseg1-1) - phid1
               phibar(ireg1) = phibar(ireg1) + phid1*wtang(ipol)
 
               ireg2 = irg_seg(iseg2)
               phid2 = phio2(iseg2+1) - sweeper%qbar(ireg2)
               phid2 = phid2*exparg(iseg2,ipol)
+              !phio1 stores the outgoing angular flux to be used for the next
+              !segment as incoming angular flux.
               phio2(iseg2) = phio2(iseg2+1) - phid2
               phibar(ireg2) = phibar(ireg2) + phid2*wtang(ipol)
             ENDDO !iseg
@@ -330,6 +334,8 @@ MODULE sweeper
           ENDDO !ipol
         ENDDO !ilray
 
+        !This is to sum over the angles owned by the current proc.
+        !MPACT says it's for polar angles, which I think is not true.
         tphi(:,ithd) = tphi(:,ithd) + phibar
         CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
       ENDDO !iang
