@@ -1,7 +1,7 @@
 MODULE sweeperUtils
 
   IMPLICIT NONE
-  !PRIVATE
+  PRIVATE
 
   PUBLIC :: PI
   PUBLIC :: AngFluxBC
@@ -12,6 +12,9 @@ MODULE sweeperUtils
   PUBLIC :: ModMeshRayPtrArryType
   PUBLIC :: XSMeshType
   PUBLIC :: ExpTableType
+  PUBLIC :: UpdateBCType_MOC
+  PUBLIC :: LongRayType_Base
+  PUBLIC :: ModMeshType
 
   DOUBLE PRECISION :: PI=3.141592653589793D0
   INTEGER,PARAMETER :: SINGLE_LEVEL_EXP_TABLE=1
@@ -304,7 +307,7 @@ MODULE sweeperUtils
       DOUBLE PRECISION,INTENT(IN) :: x
       DOUBLE PRECISION :: ans
       INTEGER :: i
-   
+
       i = FLOOR(x*ET%rdx)
       ans = ET%table2D(1,i)*x + ET%table2D(2,i)
 

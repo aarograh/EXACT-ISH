@@ -1,6 +1,7 @@
 MODULE fspSolver
 
   USE sweeper
+  USE sweeperUtils
   USE openmp
   USE openacc
   USE IO
