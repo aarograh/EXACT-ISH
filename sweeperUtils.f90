@@ -153,6 +153,7 @@ MODULE sweeperUtils
     DOUBLE PRECISION,ALLOCATABLE :: table2D(:,:)
     CONTAINS
       PROCEDURE,PASS :: EXPT
+      PROCEDURE,PASS :: EXPT_vectoripol
   END TYPE ExpTableType
 
   TYPE :: UpdateBCType_MOC
@@ -302,7 +303,35 @@ MODULE sweeperUtils
 
     END FUNCTION EXPT
 !===============================================================================
-    ELEMENTAL FUNCTION EXPT_Linear(ET,x) RESULT(ans)
+    FUNCTION EXPT_vectoripol(ET,x) RESULT(ans)
+      CLASS(ExpTableType),INTENT(IN) :: ET
+      DOUBLE PRECISION,INTENT(IN) :: x(:)
+      DOUBLE PRECISION :: ans(SIZE(x))
+      ! Local Variables
+      INTEGER :: i,j
+      DO i=1,SIZE(x)
+        IF(ET%minVal <= x(i) .AND. x(i) <= ET%maxVal) THEN
+          SELECTCASE(ET%tableType)
+            CASE(SINGLE_LEVEL_EXP_TABLE)
+            CASE(TWO_LEVEL_EXP_TABLE)
+            CASE(LINEAR_EXP_TABLE)
+              j = FLOOR(x(i)*ET%rdx)
+              ans(i) = ET%table2D(1,j)*x(i) + ET%table2D(2,j)
+            CASE DEFAULT
+              ans(i)=1.0D0 - EXP(x(i))
+          END SELECT
+        ELSE
+          IF(x(i) < -700.0D0) THEN
+            ans(i) = 1.0D0
+          ELSE
+            ans(i) = 1.0D0 - EXP(x(i))
+          ENDIF
+        ENDIF
+      ENDDO
+
+    END FUNCTION EXPT_vectoripol
+!===============================================================================
+    FUNCTION EXPT_Linear(ET,x) RESULT(ans)
       CLASS(ExpTableType),INTENT(IN) :: ET
       DOUBLE PRECISION,INTENT(IN) :: x
       DOUBLE PRECISION :: ans
@@ -353,4 +382,5 @@ MODULE sweeperUtils
       CLASS(UpdateBCType_MOC),INTENT(IN) :: thisBCU
 
     END SUBROUTINE UpdateBC_Finish
+
 END MODULE sweeperUtils
