@@ -27,7 +27,7 @@ OBJECTS=$(addprefix $(OBJDIR)/, $(OBJNAMES))
 # Include Definitions
 INCLUDE=-I$(OBJDIR)
 # Executable Definition
-EXE=EXACTISH
+EXE=EXACTISH.exe
 # Command Definitions
 RM=rm -rf
 MK=mkdir
