@@ -29,6 +29,8 @@ MODULE openmp
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
       TYPE(LongRayType_Base) :: ilongRay
 
+      DOUBLE PRECISION :: timerStt,timerStp
+
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
       wsum = 4.0D0*PI
@@ -37,13 +39,14 @@ MODULE openmp
       ALLOCATE(phibar(sweeper%nreg))
       tphi(:,ithd) = 0.0D0
 
+      CALL CPU_TIME(timerStt)
+
       DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
         wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
           sweeper%modRayDat%angquad%walpha(iang)*PI
-        DO ipol=1,npol
-          wtang(ipol) = wtangazi*sweeper%modRayDat%angquad%wtheta(ipol)* &
-            sweeper%modRayDat%angquad%sinpolang(ipol)
-        ENDDO !ipol
+        !vector: wtang(:), wtheta(:), %sinpolang(:) of size npol
+        wtang = wtangazi*sweeper%modRayDat%angquad%wtheta* &
+          sweeper%modRayDat%angquad%sinpolang
 
         phibar = 0.0D0
 
@@ -130,6 +133,8 @@ MODULE openmp
       sweeper%phis1g = sweeper%phis1g/(sweeper%xstr*sweeper%vol/sweeper%pz) + &
         sweeper%qbar*wsum
 
+      CALL CPU_TIME(timerStp)
+      WRITE(*,*) "sweep time: ", timerStp-timerStt
     ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol
 
 END MODULE openmp
