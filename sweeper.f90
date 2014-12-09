@@ -4,7 +4,7 @@ MODULE sweeper
   USE sweeperUtils
 
   IMPLICIT NONE
-!   PRIVATE
+  PRIVATE
 
   PUBLIC :: sweeperType
   PUBLIC :: sweep2D_prodquad_P0
