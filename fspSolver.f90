@@ -35,6 +35,8 @@ MODULE fspSolver
       SELECTCASE(sweepType)
         CASE(BASESOLVER)
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
+        CASE(VECTORIPOL)
+          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vecoripol
         CASE DEFAULT
           WRITE(*,*) 'Something went wrong when selecting the solver type.'
           STOP 666
