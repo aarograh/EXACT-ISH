@@ -81,19 +81,22 @@ MODULE openmp
 
           nseglray = iseg
 
-!           DO ipol=1,npol
-!             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-!             DO iseg=1,nseglray
-!               exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
-!             ENDDO !iseg
-!           ENDDO !ipol
+!the following blcok uses scalar fetch, but one sweep takes 0.08 sec.
+          DO ipol=1,npol
+            rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+            DO iseg=1,nseglray
+              exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+            ENDDO !iseg
+          ENDDO !ipol
 
-ALLOCATE(arg(npol))
-          DO iseg=1,nseglray
-            arg=tau_seg(iseg)*sweeper%modRayDat%angquad%rsinpolang
-            exparg(iseg,:) = sweeper%expTableDat%EXPT_vectoripol(arg)
-          ENDDO !iseg
-DEALLOCATE(arg)
+! !the following block uses vector fetch, but one sweep now takes 0.11 sec.
+! ALLOCATE(arg(npol))
+!           DO iseg=1,nseglray
+!             arg=tau_seg(iseg)*sweeper%modRayDat%angquad%rsinpolang
+!             exparg(iseg,:) = sweeper%expTableDat%EXPT_vectoripol(arg)
+!           ENDDO !iseg
+! DEALLOCATE(arg)
+
           DO ipol=1,npol
             phio1(0) = &
               sweeper%phiang1g_in%angle(iang)%face(is1)%angflux(ipol,ibc1)

@@ -315,10 +315,11 @@ MODULE sweeperUtils
             CASE(SINGLE_LEVEL_EXP_TABLE)
             CASE(TWO_LEVEL_EXP_TABLE)
             CASE(LINEAR_EXP_TABLE)
-              j = FLOOR(x(i)*ET%rdx)
-              ans(i) = ET%table2D(1,j)*x(i) + ET%table2D(2,j)
-            CASE DEFAULT
-              ans(i)=1.0D0 - EXP(x(i))
+              ans(i)=EXPT_Linear(ET,x(i))
+!               j = FLOOR(x(i)*ET%rdx)
+!               ans(i) = ET%table2D(1,j)*x(i) + ET%table2D(2,j)
+!             CASE DEFAULT
+!               ans(i)=1.0D0 - EXP(x(i))
           END SELECT
         ELSE
           IF(x(i) < -700.0D0) THEN
