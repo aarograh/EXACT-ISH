@@ -179,7 +179,7 @@ MODULE openmp
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
       DOUBLE PRECISION :: &
-        exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
+        exparg(SIZE(sweeper%modRayDat%angquad%wtheta),sweeper%maxsegray)
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
       TYPE(LongRayType_Base) :: ilongRay
 
@@ -239,7 +239,7 @@ MODULE openmp
           DO ipol=1,npol
             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
             DO iseg=1,nseglray
-              exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+              exparg(ipol,iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
             ENDDO !iseg
           ENDDO !ipol
 
@@ -247,7 +247,7 @@ MODULE openmp
 ! ALLOCATE(arg(npol))
 !           DO iseg=1,nseglray
 !             arg=tau_seg(iseg)*sweeper%modRayDat%angquad%rsinpolang
-!             exparg(iseg,:) = sweeper%expTableDat%EXPT_vectoripol(arg)
+!             exparg(:,iseg) = sweeper%expTableDat%EXPT_vectoripol(arg)
 !           ENDDO !iseg
 ! DEALLOCATE(arg)
 
@@ -263,7 +263,7 @@ MODULE openmp
 
               ireg1 = irg_seg(iseg1)
               phid1 = phio1(iseg1-1) - sweeper%qbar(ireg1)
-              phid1 = phid1*exparg(iseg1,ipol)
+              phid1 = phid1*exparg(ipol,iseg1)
               !phio1 stores the outgoing angular flux to be used for the next
               !segment as incoming angular flux.
               phio1(iseg1) = phio1(iseg1-1) - phid1
@@ -271,7 +271,7 @@ MODULE openmp
 
               ireg2 = irg_seg(iseg2)
               phid2 = phio2(iseg2+1) - sweeper%qbar(ireg2)
-              phid2 = phid2*exparg(iseg2,ipol)
+              phid2 = phid2*exparg(ipol,iseg2)
               !phio1 stores the outgoing angular flux to be used for the next
               !segment as incoming angular flux.
               phio2(iseg2) = phio2(iseg2+1) - phid2
