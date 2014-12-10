@@ -19,8 +19,8 @@ MODULE openmp
       INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
       INTEGER :: irg_seg(0:sweeper%maxsegray),ithd
       INTEGER :: ifrstreg_proc,ireg1,ireg2
-      DOUBLE PRECISION,ALLOCATABLE :: phid1(:),phid2(:)
-      DOUBLE PRECISION :: wsum,rpol
+      DOUBLE PRECISION,ALLOCATABLE :: phid1(:),phid2(:),rpol(:)
+      DOUBLE PRECISION :: wsum
       DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
       DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
@@ -30,11 +30,12 @@ MODULE openmp
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:,:)
       TYPE(LongRayType_Base) :: ilongRay
 
-      DOUBLE PRECISION :: timerStt,timerStp
+      DOUBLE PRECISION :: timerStt,timerStp,temp
       DOUBLE PRECISION,ALLOCATABLE :: arg(:)
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
+      ALLOCATE(rpol(npol))
       ALLOCATE(phid1(npol))
       ALLOCATE(phid2(npol))
       ALLOCATE(phio1(npol,0:sweeper%maxsegray),phio2(npol,1:sweeper%maxsegray+1))
@@ -87,18 +88,19 @@ MODULE openmp
           nseglray = iseg
 
 !the following blcok uses scalar fetch, but one sweep takes 0.08 sec.
-          DO ipol=1,npol
-            rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-            DO iseg=1,nseglray
-              exparg(ipol,iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+          rpol = sweeper%modRayDat%angquad%rsinpolang
+          DO iseg=1,nseglray
+            DO ipol=1,npol
+              temp=tau_seg(iseg)*rpol(ipol)
+              exparg(ipol,iseg) = sweeper%expTableDat%EXPT(temp)
             ENDDO !iseg
           ENDDO !ipol
 
-! !the following block uses vector fetch, but one sweep now takes 0.11 sec.
+!the following block uses vector fetch, but one sweep now takes 0.11 sec.
 ! ALLOCATE(arg(npol))
 !           DO iseg=1,nseglray
 !             arg=tau_seg(iseg)*sweeper%modRayDat%angquad%rsinpolang
-!             exparg(iseg,:) = sweeper%expTableDat%EXPT_vectoripol(arg)
+!             exparg(:,iseg) = sweeper%expTableDat%EXPT_vectoripol(arg)
 !           ENDDO !iseg
 ! DEALLOCATE(arg)
 
@@ -127,6 +129,10 @@ MODULE openmp
               phio2(:,iseg2) = phio2(:,iseg2+1) - phid2
               phibar(:,ireg2) = phibar(:,ireg2) + phid2*wtang
             ENDDO !iseg
+! PRINT*,iseg2
+! PRINT*,ireg2
+! PRINT*,phibar(:,ireg2)
+! STOP 11
 
             sweeper%phiang1g_out%angle(iang)%face(is1)%angflux(:,ibc1) = &
               phio2(:,1)
@@ -137,10 +143,13 @@ MODULE openmp
         !This is to sum over the angles owned by the current proc.
         !MPACT says it's for polar angles, which I think is not true.
         tphi(:,ithd) = tphi(:,ithd) + SUM(phibar,DIM=1)
+! PRINT*, tphi(:,ithd)
+! stop 11
         CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
       ENDDO !iang
 
       DEALLOCATE(phibar)
+      DEALLOCATE(rpol)
       DEALLOCATE(phio1)
       DEALLOCATE(phio2)
       DEALLOCATE(phid1)
