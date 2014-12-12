@@ -6,6 +6,9 @@ MODULE PGIutils
   PRIVATE
 
   PUBLIC :: SourceType_PGI
+  PUBLIC :: initExtSource_PGI
+  PUBLIC :: computeMGFS_PGI
+  PUBLIC :: updateInScatter_PGI
 
   TYPE :: SourceType_PGI
     INTEGER :: nreg=0
@@ -19,9 +22,6 @@ MODULE PGIutils
     TYPE(XSMeshType),POINTER :: myXSMesh(:) => NULL()
     CONTAINS
       PROCEDURE,PASS :: updateSelfScatter => updateSelfScatter_PGI
-      PROCEDURE,PASS :: initExtSource => initExtSource_PGI
-      PROCEDURE,PASS :: computeMGFS => computeMGFS_PGI
-      PROCEDURE,PASS :: updateInScatter => updateInScatter_PGI
   END TYPE SourceType_PGI
 
   CONTAINS
@@ -39,7 +39,6 @@ MODULE PGIutils
       qbar = thisSrc%qi1g
       ! Assumes no XS splitting (See SourceTypes.f90:470
       DO ix=1,thisSrc%nxsreg
-!WRITE(*,*) ix,ig,':',SIZE(thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from)
         xssgg = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig)
         xstrg = thisSrc%myXSMesh(ix)%xsmactr(ig)
         rxstrg4pi = r4pi/xstrg

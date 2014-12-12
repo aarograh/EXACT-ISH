@@ -31,7 +31,7 @@ MODULE fspSolver
       CLASS(fspSolverType),INTENT(INOUT) :: solver
       INTEGER,INTENT(IN) :: sweepType
 
-      IF(sweepType < NOCLASS) THEN
+      IF(sweepType < PGIBASESOLVER) THEN
         ALLOCATE(solver%sweeper)
         CALL populateData(solver%sweeper,solver%psi)
         CALL solver%sweeper%initialize(solver%source)
@@ -46,8 +46,9 @@ MODULE fspSolver
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
         CASE(VECTORIPOL)
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol1_2
-        CASE(NOCLASS)
-          solver%PGIsweeper%sweep2D_prodquad => sweep2D_prodquad_P0_PGI
+        CASE(PGIBASESOLVER)
+!          solver%PGIsweeper%sweep2D_prodquad => sweep2D_prodquad_P0_PGI
+          CONTINUE !PGI has no clue what procedure pointers are
         CASE DEFAULT
           WRITE(*,*) 'Something went wrong when selecting the solver type.'
           STOP 666
@@ -66,12 +67,16 @@ MODULE fspSolver
 !===============================================================================
     SUBROUTINE stepFspSolver(solver)
       CLASS(fspSolverType),INTENT(INOUT) :: solver
+      CLASS(sweeperType_PGI),POINTER :: ptr
 
+ptr => solver%PGISweeper
       ! Perform sweep
-      IF(solver%sweepType < NOCLASS) THEN
+      IF(solver%sweepType < PGIBASESOLVER) THEN
         CALL solver%sweeper%sweep(1,1.0D-03,solver%source,solver%psi)
       ELSE
-        CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
+!        CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
+! PGI can't handle procedure pointers without crying like a small child...
+        CALL ptr%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
       ENDIF
 
     END SUBROUTINE stepFspSolver

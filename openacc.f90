@@ -44,11 +44,13 @@ MODULE openacc
     TYPE(XSMeshType),POINTER :: myXSMesh(:)
     TYPE(ExpTableType),ALLOCATABLE :: expTableDat
     TYPE(UpdateBCType_MOC) :: updateBC !maybe, UpdateBC_MOC.f90: define this, %Start() and %Finish() methods.  Might be an MPI thing that I don't need
-    PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
-    PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
+!    PROCEDURE(absintfc_sweep),POINTER :: sweep => NULL()
+!    PROCEDURE(absintfc_setExtSource),POINTER :: setExtSource => NULL()
     PROCEDURE(absintfc_sweep2Dprodquad),POINTER :: sweep2D_prodquad => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeSweeper_PGI
+      PROCEDURE,PASS :: sweep => MOCSolver_Sweep1G_PGI
+      PROCEDURE,PASS :: setExtSource => setExtSource_MOCP0_PGI
 ! Not needed unless we decide to add a power iteration
 !      PROCEDURE,PASS :: calcFissionSrc
   END TYPE sweeperType_PGI
@@ -103,9 +105,6 @@ MODULE openacc
       ALLOCATE(sweeper%phis1gd(sweeper%nreg))
       ALLOCATE(sweeper%qbar(sweeper%nreg))
       ALLOCATE(sweeper%xstr(sweeper%nreg))
-
-      sweeper%sweep => MOCSolver_Sweep1G_PGI
-      sweeper%setExtSource => setExtSource_MOCP0_PGI
 
     END SUBROUTINE initializeSweeper_PGI
 !===============================================================================
@@ -182,11 +181,9 @@ MODULE openacc
       ! Group loop.  This is actualy in FixedSrcSolver in MPACT
       DO ig=1,sweeper%ng
         ! Set up source
-        CALL source%initExtSource(ig)
-        CALL source%computeMGFS(ig,psi)
-        CALL source%updateInScatter( &
-          ig,sweeper%igstt,sweeper%igstp)
-        CALL sweeper%setExtSource(source)
+        CALL initExtSource_PGI(source,ig)
+        CALL computeMGFS_PGI(source,ig,psi)
+        CALL updateInScatter_PGI(source,ig,sweeper%igstt,sweeper%igstp)
 
         ! This is the real beginning of the sweep routines in MPACT
         IF(1 <= ig .AND. ig <= sweeper%ng) THEN
@@ -207,7 +204,7 @@ MODULE openacc
             ! There's an call to sweeper%UpdateBC%finishi here for i > 1
 
             ! Assumes sweeper%sweepCur == .FALSE.
-            CALL sweeper%sweep2D_prodquad(i)
+            CALL sweep2D_prodquad_P0_PGI(sweeper,i)
           ENDDO !i
 
           sweeper%phis(:,ig) = sweeper%phis1g
