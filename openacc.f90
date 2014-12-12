@@ -36,7 +36,7 @@ MODULE openacc
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
     TYPE(AngFluxBC),POINTER :: phiang(:)
-    TYPE(SourceType_PGI),POINTER :: mySrc => NULL()
+    CLASS(SourceType_PGI),POINTER :: mySrc => NULL()
     TYPE(ModMeshType),POINTER :: myModMesh => NULL()
     TYPE(ModularRayType),POINTER :: modRayDat
     TYPE(CoreLongRayType) :: longRayDat
@@ -59,7 +59,7 @@ MODULE openacc
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
-      TYPE(SourceType_PGI),INTENT(INOUT) :: source
+      CLASS(SourceType_PGI),INTENT(INOUT) :: source
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
     END SUBROUTINE absintfc_sweep
   END INTERFACE
@@ -68,7 +68,7 @@ MODULE openacc
     SUBROUTINE absintfc_setExtSource(sweeper,source)
       IMPORT sweeperType_PGI,SourceType_PGI
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      TYPE(SourceType_PGI),POINTER,INTENT(IN) :: source
+      CLASS(SourceType_PGI),POINTER,INTENT(IN) :: source
     END SUBROUTINE absintfc_setExtSource
   END INTERFACE
 
@@ -84,7 +84,7 @@ MODULE openacc
 !===============================================================================
     SUBROUTINE initializeSweeper_PGI(sweeper,source)
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      TYPE(sourceType_PGI),POINTER,INTENT(INOUT) :: source
+      CLASS(SourceType_PGI),POINTER,INTENT(INOUT) :: source
 
       ! Set up source
       ALLOCATE(source)
@@ -138,7 +138,7 @@ MODULE openacc
 !===============================================================================
     SUBROUTINE setExtSource_MOCP0_PGI(sweeper,source)
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      TYPE(SourceType_PGI),POINTER,INTENT(IN) :: source
+      CLASS(SourceType_PGI),POINTER,INTENT(IN) :: source
 
       NULLIFY(sweeper%qext)
       sweeper%hasSource=.FALSE.
@@ -174,7 +174,7 @@ MODULE openacc
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
-      TYPE(SourceType_PGI),POINTER,INTENT(INOUT) :: source
+      CLASS(SourceType_PGI),POINTER,INTENT(INOUT) :: source
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       INTEGER :: i,ig
