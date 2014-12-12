@@ -109,18 +109,18 @@ MODULE sweeper
       ! Set up expoa and expob for exponential inlining
       IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &
          .NOT.ALLOCATED(expob)) THEN
-!         ALLOCATE(expoa(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
-!           LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
-!         ALLOCATE(expob(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
-!           LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
+        ALLOCATE(expoa(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
+          LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
+        ALLOCATE(expob(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
+          LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
 
-          ALLOCATE(expoa(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
-            SIZE(sweeper%expTableDat%table3D,DIM=3)))
-          ALLOCATE(expob(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
-            SIZE(sweeper%expTableDat%table3D,DIM=3)))
+!           ALLOCATE(expoa(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
+!             SIZE(sweeper%expTableDat%table3D,DIM=3)))
+!           ALLOCATE(expob(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
+!             SIZE(sweeper%expTableDat%table3D,DIM=3)))
 
-        expoa=(sweeper%expTableDat%table3D(1,:,:))*0.001D0
-        expob=(sweeper%expTableDat%table3D(2,:,:))
+        expoa=TRANSPOSE(sweeper%expTableDat%table3D(1,:,:))*0.001D0
+        expob=TRANSPOSE(sweeper%expTableDat%table3D(2,:,:))
       ENDIF
 
       sweeper%sweep => MOCSolver_Sweep1G
