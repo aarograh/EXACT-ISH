@@ -67,16 +67,12 @@ MODULE fspSolver
 !===============================================================================
     SUBROUTINE stepFspSolver(solver)
       CLASS(fspSolverType),INTENT(INOUT) :: solver
-      CLASS(sweeperType_PGI),POINTER :: ptr
 
-ptr => solver%PGISweeper
       ! Perform sweep
       IF(solver%sweepType < PGIBASESOLVER) THEN
         CALL solver%sweeper%sweep(1,1.0D-03,solver%source,solver%psi)
       ELSE
-!        CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
-! PGI can't handle procedure pointers without crying like a small child...
-        CALL ptr%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
+        CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
       ENDIF
 
     END SUBROUTINE stepFspSolver
