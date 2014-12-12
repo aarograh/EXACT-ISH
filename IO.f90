@@ -193,8 +193,18 @@ MODULE IO
       READ(inpFileUnitNo) sweeper%expTableDat%rdx
 
       ! Read table3D.dump
-      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo, &
+      OPEN(FILE='table3D.dump',UNIT=table3DUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
+      READ(table3DUnitNo) n1 !-16.0D0
+      READ(table3DUnitNo) n1 !0.0D0 to avoid confliction with values in table2D
+      READ(table3DUnitNo) n1
+      READ(table3DUnitNo) n2
+      READ(table3DUnitNo) n3
+      READ(table3DUnitNo) n4
+      ALLOCATE(sweeper%expTableDat%table3D(1:2,n1:n2,n3:n4))
+      READ(table3DUnitNo) sweeper%expTableDat%table3D
+      READ(table3DUnitNo) n1 !.001D0 same as in table2D
+      CLOSE(table3DUnitNo)
 
       ! Read AngFluxBC data
       READ(inpFileUnitNo) n1
