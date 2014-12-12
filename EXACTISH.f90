@@ -30,7 +30,7 @@ PROGRAM EXACTISH
   WRITE(*,*) '======================================'
   WRITE(*,*) 'Validating Solution...'
   WRITE(*,*) '======================================'
-  IF(solveType < NOCLASS) THEN
+  IF(solveType < PGIBASESOLVER) THEN
     CALL validate(solver%sweeper%phis)
   ELSE
     CALL validate(solver%PGIsweeper%phis)
