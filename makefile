@@ -16,11 +16,12 @@ endif
 ifeq ($(compiler),$(EMPTY))
 	COMPILER=gfortran -J$(OBJDIR) -c -o
 	LINKER=gfortran -o
+	FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
 else
 	COMPILER=$(compiler) -c -o
 	LINKER=$(compiler) -o
+	FLAGS=-g -O0 -Mbounds
 endif
-FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
 # Object Definitions
 OBJNAMES=$(SOURCES:.f90=.o)
 OBJECTS=$(addprefix $(OBJDIR)/, $(OBJNAMES))
