@@ -15,6 +15,7 @@ MODULE IO
   INTEGER,PARAMETER :: inpFileUnitNo=123
   INTEGER,PARAMETER :: solFileUnitNo=124
   INTEGER,PARAMETER :: outFileUnitNo=125
+  INTEGER,PARAMETER :: table3DUnitNo=126
 
   INTEGER,PARAMETER :: BASESOLVER = 1
   INTEGER,PARAMETER :: VECTORIPOL = 2
@@ -190,6 +191,10 @@ MODULE IO
       ALLOCATE(sweeper%expTableDat%table2D(1:2,n1:n2))
       READ(inpFileUnitNo) sweeper%expTableDat%table2D
       READ(inpFileUnitNo) sweeper%expTableDat%rdx
+
+      ! Read table3D.dump
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo, &
+        FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
 
       ! Read AngFluxBC data
       READ(inpFileUnitNo) n1
