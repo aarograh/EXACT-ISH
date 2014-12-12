@@ -20,7 +20,7 @@ ifeq ($(compiler),$(EMPTY))
 else
 	COMPILER=$(compiler) -c -o
 	LINKER=$(compiler) -o
-	FLAGS=-g -O0 -Mbounds -traceback
+	FLAGS=-O2 -Mbounds -traceback
 endif
 # Object Definitions
 OBJNAMES=$(SOURCES:.f90=.o)
