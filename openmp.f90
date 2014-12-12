@@ -601,6 +601,8 @@ MODULE openmp
 
       DOUBLE PRECISION :: timerStt,timerStp
       DOUBLE PRECISION,ALLOCATABLE :: arg(:)
+      DOUBLE PRECISION :: xval
+      INTEGER :: ix
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
@@ -660,15 +662,19 @@ MODULE openmp
 
           nseglray = iseg
 
-          DO ipol=1,npol
-            rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-            DO iseg=1,nseglray
-              exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
-            ENDDO !iseg
-          ENDDO !ipol
+!           DO ipol=1,npol
+!             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+!             DO iseg=1,nseglray
+!               exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+!             ENDDO !iseg
+!           ENDDO !ipol
 
-!           DO iseg=1,nseglray
-!             exparg(iseg,:)=expoa()
+          DO iseg=1,nseglray
+            xval=tau_seg(iseg)*1000.0D0
+            ix=xval
+            ix=MAX(ix,-16000)
+            exparg(iseg,:)=expoa(ix,:)*xval+expob(ix,:)
+          ENDDO
 
           DO ipol=1,npol
             phio1(0) = &
