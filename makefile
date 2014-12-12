@@ -16,7 +16,7 @@ endif
 ifeq ($(compiler),$(EMPTY))
 	COMPILER=gfortran -J$(OBJDIR) -c -o
 	LINKER=gfortran -o
-	FLAGS=-std=f2003 -Wall -fall-intrinsics -Ofast -g -fbacktrace -fbounds-check -Wall
+	FLAGS=-std=f2003 -fall-intrinsics -Ofast -fbacktrace -fbounds-check -Wconversion -Wline-truncation 
 else
 	COMPILER=$(compiler) -c -o
 	LINKER=$(compiler) -o
