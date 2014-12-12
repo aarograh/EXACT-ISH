@@ -36,7 +36,7 @@ MODULE sweeper
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
     TYPE(AngFluxBC),POINTER :: phiang(:)
-    TYPE(SourceType_P0),POINTER :: mySrc => NULL()
+    CLASS(SourceType_P0),POINTER :: mySrc => NULL()
     TYPE(ModMeshType),POINTER :: myModMesh => NULL()
     TYPE(ModularRayType),POINTER :: modRayDat
     TYPE(CoreLongRayType) :: longRayDat
@@ -195,7 +195,7 @@ MODULE sweeper
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
-      CLASS(SourceType),INTENT(INOUT) :: source
+      CLASS(SourceType),POINTER,INTENT(INOUT) :: source
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       INTEGER :: i,ig
@@ -224,9 +224,6 @@ MODULE sweeper
             sweeper%phis1gd = sweeper%phis1g
 
             sweeper%phis1g = 0.0D0
-
-            ! There's an call to sweeper%UpdateBC%finishi here for i > 1
-
             ! Assumes sweeper%sweepCur == .FALSE.
             CALL sweeper%sweep2D_prodquad(i)
           ENDDO !i
