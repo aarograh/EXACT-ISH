@@ -1,5 +1,5 @@
 # File definitions
-SOURCES=sweeperUtils.f90 sweeper.f90 IO.f90 openmp.f90 openacc.f90 fspSolver.f90 EXACTISH.f90
+SOURCES=sweeperUtils.f90 sweeper.f90 openmp.f90 PGIutils.f90 openacc.f90 IO.f90 fspSolver.f90 EXACTISH.f90
 # Directory Definitions
 EMPTY=
 ifeq ($(source),$(EMPTY))
@@ -16,7 +16,7 @@ endif
 ifeq ($(compiler),$(EMPTY))
 	COMPILER=gfortran -J$(OBJDIR) -c -o
 	LINKER=gfortran -o
-	FLAGS=-std=f2003 -fall-intrinsics -Ofast -fbacktrace -fbounds-check -Wconversion -Wline-truncation 
+	FLAGS=-std=f2003 -fall-intrinsics -Ofast -fbacktrace -fbounds-check -Wconversion -Wline-truncation -g
 else
 	COMPILER=$(compiler) -c -o
 	LINKER=$(compiler) -o
