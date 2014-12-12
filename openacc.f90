@@ -5,6 +5,7 @@ MODULE openacc
 !then long ray
   USE sweeperUtils
   USE sweeper
+  USE PGIutils
 
   IMPLICIT NONE
   PRIVATE
@@ -35,7 +36,7 @@ MODULE openacc
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
     TYPE(AngFluxBC),POINTER :: phiang(:)
-    TYPE(SourceType_P0),POINTER :: mySrc => NULL()
+    TYPE(SourceType_PGI),POINTER :: mySrc => NULL()
     TYPE(ModMeshType),POINTER :: myModMesh => NULL()
     TYPE(ModularRayType),POINTER :: modRayDat
     TYPE(CoreLongRayType) :: longRayDat
@@ -54,20 +55,20 @@ MODULE openacc
 
   ABSTRACT INTERFACE
     SUBROUTINE absintfc_sweep(sweeper,ninners,tol,source,psi)
-      IMPORT sweeperType_PGI,SourceType
+      IMPORT sweeperType_PGI,SourceType_PGI
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
-      CLASS(SourceType),INTENT(INOUT) :: source
+      TYPE(SourceType_PGI),INTENT(INOUT) :: source
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
     END SUBROUTINE absintfc_sweep
   END INTERFACE
 
   ABSTRACT INTERFACE
     SUBROUTINE absintfc_setExtSource(sweeper,source)
-      IMPORT sweeperType_PGI,SourceType
+      IMPORT sweeperType_PGI,SourceType_PGI
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      CLASS(SourceType),POINTER,INTENT(IN) :: source
+      TYPE(SourceType_PGI),POINTER,INTENT(IN) :: source
     END SUBROUTINE absintfc_setExtSource
   END INTERFACE
 
@@ -83,15 +84,13 @@ MODULE openacc
 !===============================================================================
     SUBROUTINE initializeSweeper_PGI(sweeper,source)
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      CLASS(sourceType),POINTER,INTENT(INOUT) :: source
+      TYPE(sourceType_PGI),POINTER,INTENT(INOUT) :: source
 
       ! Set up source
-      ALLOCATE(SourceType_P0 :: source)
-      SELECTTYPE(source); TYPE IS(SourceType_P0)
-        sweeper%mySrc => source
-        ALLOCATE(source%qi1g(sweeper%nreg))
-        source%qext => source%qi1g
-      END SELECT
+      ALLOCATE(source)
+      sweeper%mySrc => source
+      ALLOCATE(source%qi1g(sweeper%nreg))
+      source%qext => source%qi1g
       source%nreg = sweeper%nreg
       source%nxsreg = sweeper%nxsreg
       source%ng = sweeper%ng
@@ -139,15 +138,13 @@ MODULE openacc
 !===============================================================================
     SUBROUTINE setExtSource_MOCP0_PGI(sweeper,source)
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
-      CLASS(SourceType),POINTER,INTENT(IN) :: source
+      TYPE(SourceType_PGI),POINTER,INTENT(IN) :: source
 
       NULLIFY(sweeper%qext)
       sweeper%hasSource=.FALSE.
-      SELECTTYPE(source); TYPE IS(SourceType_P0)
-        sweeper%mySrc => source
-        sweeper%qext => source%qext
-        sweeper%hasSource=.TRUE.
-      ENDSELECT
+      sweeper%mySrc => source
+      sweeper%qext => source%qext
+      sweeper%hasSource=.TRUE.
 
     END SUBROUTINE setExtSource_MOCP0_PGI
 !===============================================================================
@@ -177,7 +174,7 @@ MODULE openacc
       CLASS(sweeperType_PGI),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: ninners
       DOUBLE PRECISION,INTENT(IN) :: tol
-      CLASS(SourceType),INTENT(INOUT) :: source
+      TYPE(SourceType_PGI),POINTER,INTENT(INOUT) :: source
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       INTEGER :: i,ig
