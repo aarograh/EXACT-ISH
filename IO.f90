@@ -290,8 +290,6 @@ MODULE IO
             ALLOCATE(sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from( &
               sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin: &
               sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax))
-!IF(i == 1) WRITE(*,*) i,ii,iii,':',sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmin, &
-!sweeper%myXSMesh(i)%xsmacsc(iii,ii)%gmax
             READ(inpFileUnitNo) sweeper%myXSMesh(i)%xsmacsc(iii,ii)%from
           ENDDO
         ENDDO
