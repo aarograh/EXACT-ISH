@@ -199,6 +199,9 @@ MODULE sweeper
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       INTEGER :: i,ig
+      DOUBLE PRECISION :: timeStt,timeStp,timeTotal
+
+      timeTotal = 0.0D0
 
       ! Group loop.  This is actualy in FixedSrcSolver in MPACT
       DO ig=1,sweeper%ng
@@ -225,7 +228,14 @@ MODULE sweeper
 
             sweeper%phis1g = 0.0D0
             ! Assumes sweeper%sweepCur == .FALSE.
+            CALL CPU_TIME(timeStt)
             CALL sweeper%sweep2D_prodquad(i)
+            CALL CPU_TIME(timeStp)
+            timeStp = timeStp - timeStt
+            timeTotal = timeTotal + timeStp
+            WRITE(*,*) 'Iteration Time: ',timeStp
+            WRITE(*,*) 'Accumulated Sweep Time: ',timeTotal
+            WRITE(*,*)
           ENDDO !i
 
           sweeper%phis(:,ig) = sweeper%phis1g

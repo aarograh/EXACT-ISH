@@ -67,13 +67,18 @@ MODULE fspSolver
 !===============================================================================
     SUBROUTINE stepFspSolver(solver)
       CLASS(fspSolverType),INTENT(INOUT) :: solver
+      ! Local Variables
+      DOUBLE PRECISION :: timeStt,timeStp
 
       ! Perform sweep
+      CALL CPU_TIME(timeStt)
       IF(solver%sweepType < PGIBASESOLVER) THEN
         CALL solver%sweeper%sweep(1,1.0D-03,solver%source,solver%psi)
       ELSE
         CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
       ENDIF
+      CALL CPU_TIME(timeStp)
+      WRITE(*,*) 'Total Calculation Time:',timeStp - timeStt
 
     END SUBROUTINE stepFspSolver
 END MODULE fspSolver
