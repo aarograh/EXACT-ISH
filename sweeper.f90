@@ -8,6 +8,10 @@ MODULE sweeper
 
   PUBLIC :: sweeperType
   PUBLIC :: sweep2D_prodquad_P0
+  PUBLIC :: expoa,expob
+
+  !For polar angle dependent exponential table inlining.
+  DOUBLE PRECISION,ALLOCATABLE,SAVE :: expoa(:,:),expob(:,:)
 
   TYPE :: sweeperType
     LOGICAL :: hasSource=.FALSE.
@@ -101,6 +105,17 @@ MODULE sweeper
       ALLOCATE(sweeper%phis1gd(sweeper%nreg))
       ALLOCATE(sweeper%qbar(sweeper%nreg))
       ALLOCATE(sweeper%xstr(sweeper%nreg))
+
+      ! Set up expoa and expob for exponential inlining
+      IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &
+         .NOT.ALLOCATED(expob)) THEN
+        ALLOCATE(expoa(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
+          LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
+        ALLOCATE(expob(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
+          LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
+        expoa=TRANSPOSE(sweeper%expTableDat%table3D(1,:,:))*0.001D0
+        expob=TRANSPOSE(sweeper%expTableDat%table3D(2,:,:))
+      ENDIF
 
       sweeper%sweep => MOCSolver_Sweep1G
       sweeper%setExtSource => setExtSource_MOCP0
