@@ -3,6 +3,7 @@ MODULE fspSolver
   USE sweeper
   USE sweeperUtils
   USE openmp
+  USE PGIutils
   USE openacc
   USE IO
 
@@ -16,8 +17,8 @@ MODULE fspSolver
     DOUBLE PRECISION,POINTER :: psi(:) => NULL()
     CLASS(SourceType),POINTER :: source => NULL()
     CLASS(sweeperType),POINTER :: sweeper => NULL()
-    CLASS(SourceType),POINTER :: PGIsource => NULL()
-    CLASS(sweeperType_PGI),POINTER :: PGIsweeper => NULL()
+    TYPE(SourceType_PGI),POINTER :: PGIsource => NULL()
+    TYPE(sweeperType_PGI),POINTER :: PGIsweeper => NULL()
     CONTAINS
       PROCEDURE,PASS :: initialize => initializeFspSolver
       PROCEDURE,PASS :: solve => solveFspSolver
