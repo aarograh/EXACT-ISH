@@ -38,7 +38,7 @@ MODULE fspSolver
       ELSE
         ALLOCATE(solver%PGIsweeper)
         CALL populateData_PGI(solver%PGIsweeper,solver%psi)
-        CALL solver%PGIsweeper%initialize(solver%PGIsource)
+        CALL solver%PGIsweeper%initialize(solver%PGIsource,sweepType)
       ENDIF
 
       SELECTCASE(sweepType)
@@ -46,7 +46,7 @@ MODULE fspSolver
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
         CASE(VECTORIPOL)
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol1_2
-        CASE(PGIBASESOLVER)
+        CASE(PGIBASESOLVER,ENERGYINNERSOLVER)
 !          solver%PGIsweeper%sweep2D_prodquad => sweep2D_prodquad_P0_PGI
           CONTINUE !PGI has no clue what procedure pointers are
         CASE DEFAULT
@@ -74,8 +74,11 @@ MODULE fspSolver
       CALL CPU_TIME(timeStt)
       IF(solver%sweepType < PGIBASESOLVER) THEN
         CALL solver%sweeper%sweep(1,1.0D-03,solver%source,solver%psi)
-      ELSE
+      ELSEIF(solver%sweepType == PGIBASESOLVER) THEN
         CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
+      ELSEIF(solver%sweepType == ENERGYINNERSOLVER) THEN
+        CALL MOCSolver_SweepMG_PGI(solver%PGIsweeper,1,1.0D-03, &
+          solver%PGIsource,solver%psi)
       ENDIF
       CALL CPU_TIME(timeStp)
       WRITE(*,*) 'Total Calculation Time:',timeStp - timeStt

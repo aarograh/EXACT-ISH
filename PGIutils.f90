@@ -19,6 +19,7 @@ MODULE PGIutils
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     DOUBLE PRECISION,POINTER :: split(:) => NULL()
     DOUBLE PRECISION,POINTER :: qextmg(:,:) => NULL()
+    DOUBLE PRECISION,POINTER :: qimg(:,:) => NULL()
     TYPE(XSMeshType),POINTER :: myXSMesh(:) => NULL()
     CONTAINS
       PROCEDURE,PASS :: updateSelfScatter => updateSelfScatter_PGI
