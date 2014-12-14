@@ -91,6 +91,7 @@ MODULE sweeper
       SELECTTYPE(source); TYPE IS(SourceType_P0)
         sweeper%mySrc => source
         ALLOCATE(source%qi1g(sweeper%nreg))
+        source%qi1g = 0.0D0
         source%qext => source%qi1g
       END SELECT
       source%nreg = sweeper%nreg
@@ -99,12 +100,17 @@ MODULE sweeper
       source%phis => sweeper%phis
       source%myXSMesh => sweeper%myXSMesh
       ALLOCATE(source%qextmg(source%nreg,source%ng))
+      source%qextmg = 0.0D0
 
       ! Allocate sweeper variables
       ALLOCATE(sweeper%phis1g(sweeper%nreg))
+      sweeper%phis1g = 0.0D0
       ALLOCATE(sweeper%phis1gd(sweeper%nreg))
+      sweeper%phis1gd = 0.0D0
       ALLOCATE(sweeper%qbar(sweeper%nreg))
+      sweeper%qbar = 0.0D0
       ALLOCATE(sweeper%xstr(sweeper%nreg))
+      sweeper%xstr = 0.0D0
 
       ! Set up expoa and expob for exponential inlining
       IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &

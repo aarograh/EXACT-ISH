@@ -106,8 +106,10 @@ MODULE openacc
       source%phis => sweeper%phis
       source%myXSMesh => sweeper%myXSMesh
       ALLOCATE(source%qextmg(source%nreg,source%ng))
+      source%qextmg = 0.0D0
       IF(sweepType < 12) THEN
         ALLOCATE(source%qi1g(sweeper%nreg))
+        source%qi1g = 0.0D0
         source%qext => source%qi1g
       ELSE
         ALLOCATE(source%qimg(sweeper%nreg,sweeper%ng))
@@ -115,13 +117,18 @@ MODULE openacc
 
       ! Allocate sweeper variables
       ALLOCATE(sweeper%phis1g(sweeper%nreg))
+      sweeper%phis1g = 0.0D0
       ALLOCATE(sweeper%phis1gd(sweeper%nreg))
+      sweeper%phis1gd = 0.0D0
       ALLOCATE(sweeper%qbar(sweeper%nreg))
+      sweeper%qbar = 0.0D0
       IF(sweepType < 12) THEN
         ALLOCATE(sweeper%xstr(sweeper%nreg))
       ELSE
         ALLOCATE(sweeper%xstrmg(sweeper%nreg,sweeper%ng))
+        sweeper%xstrmg = 0.0D0
         ALLOCATE(sweeper%qbarmg(sweeper%nreg,sweeper%ng))
+        sweeper%qbarmg = 0.0D0
         ALLOCATE(sweeper%phiangmg_out(sweeper%ng))
         DO ig=1,sweeper%ng
           i1 = SIZE(sweeper%phiang1g_out%angle)
@@ -134,6 +141,7 @@ MODULE openacc
               i4 = SIZE(sweeper%phiang1g_out%angle(iang)%face(iface)%angFlux,DIM=2)
               ALLOCATE(sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angFlux( &
                 i3,0:i4-1))
+              sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angFlux = 0.0D0
             ENDDO !iface
           ENDDO !iang
         ENDDO !ig
