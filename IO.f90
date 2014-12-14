@@ -459,6 +459,7 @@ MODULE IO
           diff = (phis(ireg,ig) - compval)/compval
           maxdiff = MAX(maxdiff,ABS(diff))
           rmsdiff = rmsdiff + diff*diff
+!WRITE(*,'(2i5,a3,3f10.5)') ig,ireg,' : ',phis(ireg,ig),compval,diff
         ENDDO !ireg
       ENDDO !ig
 
