@@ -810,7 +810,7 @@ MODULE openmp
           ENDDO !imod
 
           nseglray = iseg
-
+STOP 22
 !the following blcok uses scalar lookup, but one sweep takes 0.2720 sec.
           DO ipol=1,npol
             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
