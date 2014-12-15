@@ -387,6 +387,8 @@ MODULE openacc
       DOUBLE PRECISION :: phio1,phio1d,phio2,phio2d
       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
       DOUBLE PRECISION :: exparg(sweeper%maxsegray)
+!      DOUBLE PRECISION :: xstrA(sweeper%nreg)
+!      DOUBLE PRECISION :: qbarWsum(sweeper%nreg)
       TYPE(LongRayType_Base) :: ilongRay
 
       timeTotal = 0.0D0
@@ -405,8 +407,8 @@ MODULE openacc
           ! Update in-scatter and self-scatter source
           CALL updateInScatter_PGI(source,ig,sweeper%igstt,sweeper%igstp)
           CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
-           CALL MOCSolver_Setup1GFSP_PGI(sweeper%myXSMesh,sweeper%nxsreg, &
-             sweeper%phis1g,sweeper%nreg,sweeper%xstrmg(:,ig),sweeper%qbarmg(:,ig),ig)
+          CALL MOCSolver_Setup1GFSP_PGI(sweeper%myXSMesh,sweeper%nxsreg, &
+            sweeper%phis1g,sweeper%nreg,sweeper%xstrmg(:,ig),sweeper%qbarmg(:,ig),ig)
           sweeper%phis1gd = sweeper%phis(:,ig)
         ENDDO !ig
 
@@ -461,6 +463,8 @@ MODULE openacc
               ENDDO !imod
 
               nseglray = iseg
+!              xstrA = sweeper%xstr*sweeper%vol/sweeper%pz
+!              qbarWsum = sweeper%qbar*wsum
               DO ipol=1,npol
                 rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
                 DO iseg=1,nseglray
@@ -481,14 +485,14 @@ MODULE openacc
                   !phio1 stores the outgoing angular flux to be used for the next
                   !segment as incoming angular flux.
                   phio1 = phio1d - phid1
-                  sweeper%phis(ireg1,ig) = sweeper%phis(ireg1,ig) + phid1*wtang(ipol)
+                  sweeper%phis(ireg1,ig) = sweeper%phis(ireg1,ig) + phid1*wtang(ipol)!/xstrA(ireg1) + qbarWsum(ireg1)
         
                   ireg2 = irg_seg(iseg2)
                   phid2 = (phio2d - sweeper%qbar(ireg2)) * exparg(iseg2)
                   !phio1 stores the outgoing angular flux to be used for the next
                   !segment as incoming angular flux.
                   phio2 = phio2d - phid2
-                  sweeper%phis(ireg2,ig) = sweeper%phis(ireg2,ig) + phid2*wtang(ipol)
+                  sweeper%phis(ireg2,ig) = sweeper%phis(ireg2,ig) + phid2*wtang(ipol)!/xstrA(ireg2) + qbarWsum(ireg2)
                 ENDDO !iseg
         
                 sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = phio2
