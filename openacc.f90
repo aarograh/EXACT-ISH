@@ -388,7 +388,7 @@ MODULE openacc
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray,sweeper%ng)
       DOUBLE PRECISION :: &
-        exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta),sweeper%ng)
+        exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:,:)
       TYPE(LongRayType_Base) :: ilongRay
 
@@ -466,17 +466,15 @@ MODULE openacc
         
             nseglray = iseg
         
-            DO ipol=1,npol
-              rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-              DO ig=1,sweeper%ng
-                DO iseg=1,nseglray
-                  exparg(iseg,ipol,ig) = sweeper%expTableDat%EXPT(tau_seg(iseg,ig)*rpol)
-                ENDDO !iseg
-              ENDDO !ig
-            ENDDO !ipol
-        
             DO ig=1,sweeper%ng
               sweeper%activeg = ig
+              DO ipol=1,npol
+                rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+                DO iseg=1,nseglray
+                  exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg,ig)*rpol)
+                ENDDO !iseg
+              ENDDO !ipol
+        
               DO ipol=1,npol
                 phio1(0) = &
                   sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
@@ -489,7 +487,7 @@ MODULE openacc
           
                   ireg1 = irg_seg(iseg1)
                   phid1 = phio1(iseg1-1) - sweeper%qbarmg(ireg1,ig)
-                  phid1 = phid1*exparg(iseg1,ipol,ig)
+                  phid1 = phid1*exparg(iseg1,ipol)
                   !phio1 stores the outgoing angular flux to be used for the next
                   !segment as incoming angular flux.
                   phio1(iseg1) = phio1(iseg1-1) - phid1
@@ -497,7 +495,7 @@ MODULE openacc
         
                   ireg2 = irg_seg(iseg2)
                   phid2 = phio2(iseg2+1) - sweeper%qbarmg(ireg2,ig)
-                  phid2 = phid2*exparg(iseg2,ipol,ig)
+                  phid2 = phid2*exparg(iseg2,ipol)
                   !phio1 stores the outgoing angular flux to be used for the next
                   !segment as incoming angular flux.
                   phio2(iseg2) = phio2(iseg2+1) - phid2
