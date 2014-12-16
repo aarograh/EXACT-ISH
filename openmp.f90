@@ -940,8 +940,8 @@ MODULE openmp
           sweeper%modRayDat%angquad%sinpolang
 
         phibar = 0.0D0
+
 !$OMP DO SCHEDULE(DYNAMIC,4)
-!!$OMP DO
         DO ilray=1,sweeper%longRayDat%nlongrays(iang)
           ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
           im = ilongRay%ifirstModMesh
@@ -1037,7 +1037,7 @@ MODULE openmp
 
       !Reduce over threads
       DO ithd=1,nproc
-!         PRINT*,ithd,nproc
+         PRINT*,ithd,nproc
         sweeper%phis1g=sweeper%phis1g+tphi(:,ithd)
       ENDDO
 
