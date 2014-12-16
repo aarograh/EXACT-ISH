@@ -912,7 +912,7 @@ MODULE openmp
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
 
       wsum = 4.0D0*PI
-      nproc=8
+      nproc=1
 
       ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
       ALLOCATE(tphi(sweeper%nreg,nproc))
