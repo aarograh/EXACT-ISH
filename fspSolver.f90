@@ -45,9 +45,8 @@ MODULE fspSolver
         CASE(BASESOLVER)
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
         CASE(VECTORIPOL)
-          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol3_3
-        CASE(PGIBASESOLVER,ENERGYINNERSOLVER)
-!          solver%PGIsweeper%sweep2D_prodquad => sweep2D_prodquad_P0_PGI
+          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol1_2
+        CASE(PGIBASESOLVER,ENERGYINNERSOLVER,OPENACCSOLVER)
           CONTINUE !PGI has no clue what procedure pointers are
         CASE DEFAULT
           WRITE(*,*) 'Something went wrong when selecting the solver type.'
@@ -78,6 +77,9 @@ MODULE fspSolver
         CALL solver%PGIsweeper%sweep(1,1.0D-03,solver%PGIsource,solver%psi)
       ELSEIF(solver%sweepType == ENERGYINNERSOLVER) THEN
         CALL MOCSolver_SweepMG_PGI(solver%PGIsweeper,1,1.0D-03, &
+          solver%PGIsource,solver%psi)
+      ELSEIF(solver%sweepType == OPENACCSOLVER) THEN
+        CALL MOCSolver_SweepACC_PGI(solver%PGIsweeper,1,1.0D-03, &
           solver%PGIsource,solver%psi)
       ENDIF
       CALL CPU_TIME(timeStp)

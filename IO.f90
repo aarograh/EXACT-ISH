@@ -15,6 +15,7 @@ MODULE IO
   PUBLIC :: VECTORIPOL
   PUBLIC :: PGIBASESOLVER
   PUBLIC :: ENERGYINNERSOLVER
+  PUBLIC :: OPENACCSOLVER
 
   INTEGER,PARAMETER :: inpFileUnitNo=123
   INTEGER,PARAMETER :: solFileUnitNo=124
@@ -25,6 +26,7 @@ MODULE IO
   INTEGER,PARAMETER :: VECTORIPOL = 2
   INTEGER,PARAMETER :: PGIBASESOLVER = 11
   INTEGER,PARAMETER :: ENERGYINNERSOLVER = 12
+  INTEGER,PARAMETER :: OPENACCSOLVER = 13
 
   CONTAINS
 !===============================================================================
@@ -459,7 +461,6 @@ MODULE IO
           diff = (phis(ireg,ig) - compval)/compval
           maxdiff = MAX(maxdiff,ABS(diff))
           rmsdiff = rmsdiff + diff*diff
-!WRITE(*,'(2i5,a3,3f10.5)') ig,ireg,' : ',phis(ireg,ig),compval,diff
         ENDDO !ireg
       ENDDO !ig
 
