@@ -546,13 +546,10 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       INTEGER :: irg_seg(0:sweeper%maxsegray),ithd,ifrstreg(SIZE(sweeper%myModMesh%ifrstfsreg))
       INTEGER :: ifrstreg_proc,ireg1,ireg2,nlrays,iray
       INTEGER :: nlongrays(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
-      INTEGER :: nmodrayseg(SUM(sweeper%modRayDat%angles(:)%nmodrays))
-      INTEGER :: nextsurf(SUM(sweeper%modRayDat%angles(:)%nmodrays))
-      INTEGER :: nextray(SUM(sweeper%modRayDat%angles(:)%nmodrays))
       INTEGER :: iang2irefl(sweeper%UpdateBC%nfaces,sweeper%UpdateBC%nangles)
       INTEGER,ALLOCATABLE :: lrayiside(:,:),BCIndex(:,:),firstModRay(:),ifirstModMesh(:)
-      INTEGER,ALLOCATABLE :: ifirstfsreg(:),nseg(:),rtmeshireg(:)
-      INTEGER,ALLOCATABLE :: neigh(:,:),nmods(:),nmodray(:)
+      INTEGER,ALLOCATABLE :: ifirstfsreg(:),nseg(:),rtmeshireg(:),nextsurf(:)
+      INTEGER,ALLOCATABLE :: neigh(:,:),nmods(:),nmodray(:),nmodrayseg(:),nextray(:)
       DOUBLE PRECISION :: timeStt,timeStp,timeTotal
       DOUBLE PRECISION :: phid1,phid2,wsum,rpol
       DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
@@ -621,6 +618,15 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
         ALLOCATE(ifirstModMesh(nlrays))
         ALLOCATE(nmods(nlrays))
         ALLOCATE(nmodray(0:nlrays)); nmodray = 0
+        maxsegray = 0
+        DO iang=iangstt,iangstp
+          DO ilray=1,nlongrays(iang)
+            maxsegray = maxsegray + sweeper%longRayDat%angles(iang)%longrays(ilray)%nmods
+          ENDDO !ilray
+        ENDDO !iang
+        ALLOCATE(nmodrayseg(maxsegray))
+        ALLOCATE(nextsurf(maxsegray))
+        ALLOCATE(nextray(maxsegray))
         ALLOCATE(neigh(LBOUND(sweeper%myModMesh%neigh,DIM=1):UBOUND(sweeper%myModMesh%neigh,DIM=1), &
           LBOUND(sweeper%myModMesh%neigh,DIM=2):UBOUND(sweeper%myModMesh%neigh,DIM=2)))
         neigh = sweeper%myModMesh%neigh
@@ -681,9 +687,9 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           ENDDO !iang
           wtangazi = dlr(iang)*walpha(iang)*PI
           wtang = wtangazi*wtheta*sinpolang
-          i1 = (iray-1)*maxsegray 
 !$acc loop private(tau_seg,irg_seg)
           DO ig=1,ng
+            i1 = (iray-1)*maxsegray 
             imray = firstModRay(iray)
             im = ifirstModMesh(iray)
             iseg = 0
@@ -713,8 +719,8 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
                 exparg(iseg) = 1.0D0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
               ENDDO !iseg
 
-              phio1 = 1.0D0 !sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
-              phio2 = 1.0D0 !sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+              phio1 = sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2 = sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
               iseg2 = nseglray + 1
         
               DO iseg1=1,nseglray
@@ -737,14 +743,14 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
                 phis(ireg2,ig) = phis(ireg2,ig) + phid2*wtang(ipol)
               ENDDO !iseg
         
-!              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = phio2
-!              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = phio1
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = phio2
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = phio1
             ENDDO !ipol
             IF(updateBC) THEN
               DO iface=1,nfaces
                 irefl = iang2irefl(iface,iang)
-!                sweeper%phiang(ig)%angle(irefl)%face(iface)%angflux = &
-!                  sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angflux
+                sweeper%phiang(ig)%angle(irefl)%face(iface)%angflux = &
+                  sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angflux
               ENDDO !iface
             ENDIF
           ENDDO !ig
