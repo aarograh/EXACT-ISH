@@ -16,7 +16,7 @@ endif
 ifeq ($(compiler),$(EMPTY))
 	COMPILER=gfortran -J$(OBJDIR) -c -o
 	LINKER=gfortran -o
-	FLAGS=-std=f2003 -fall-intrinsics  -fbacktrace -fbounds-check -Wconversion -Wline-truncation -O2
+	FLAGS=-std=f2003 -fall-intrinsics -fopenmp -fbacktrace -fbounds-check -Wconversion -Wline-truncation -O2
 else
 	COMPILER=$(compiler) -c -o
 	LINKER=$(compiler) -o
@@ -34,13 +34,13 @@ RM=rm -rf
 MK=mkdir
 
 # Default target
-.PHONY: 
+.PHONY:
 all: $(OBJNAMES)
 	$(LINKER) $(EXE) $(OBJECTS) $(FLAGS) $(INCLUDE)
 
 # Object file target
 %.o: %.f90 $(OBJDIR)
-	$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $< 
+	$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $<
 
 # Object directory target
 $(OBJDIR):
