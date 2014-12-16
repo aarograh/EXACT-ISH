@@ -544,7 +544,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf
       INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
       INTEGER :: irg_seg(0:sweeper%maxsegray),ithd,ifrstreg(SIZE(sweeper%myModMesh%ifrstfsreg))
-      INTEGER :: ifrstreg_proc,ireg1,ireg2,nlrays,iray
+      INTEGER :: ifrstreg_proc,ireg1,ireg2,nlrays,iray,nfacerays
       INTEGER :: nlongrays(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
       INTEGER :: iang2irefl(sweeper%UpdateBC%nfaces,sweeper%UpdateBC%nangles)
       INTEGER,ALLOCATABLE :: lrayiside(:,:),BCIndex(:,:),firstModRay(:),ifirstModMesh(:)
@@ -563,7 +563,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       DOUBLE PRECISION :: rsinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
       DOUBLE PRECISION :: xstrmg(sweeper%nreg,sweeper%ng),qbarmg(sweeper%nreg,sweeper%ng)
       DOUBLE PRECISION :: phis(sweeper%nreg,sweeper%ng)
-      DOUBLE PRECISION,ALLOCATABLE :: angflux(:,:),hseg(:)
+      DOUBLE PRECISION,ALLOCATABLE :: angflux(:,:,:,:,:),hseg(:)
       TYPE(LongRayType_Base) :: ilongRay
 
       timeTotal = 0.0D0
@@ -619,10 +619,16 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
         ALLOCATE(nmods(nlrays))
         ALLOCATE(nmodray(0:nlrays)); nmodray = 0
         maxsegray = 0
+        nfacerays = 0
         DO iang=iangstt,iangstp
           DO ilray=1,nlongrays(iang)
             maxsegray = maxsegray + sweeper%longRayDat%angles(iang)%longrays(ilray)%nmods
           ENDDO !ilray
+          DO ig=1,ng
+            DO iface=1,nfaces
+              nfacerays = MAX(nfacerays,SIZE(sweeper%phiang(ig)%angle(iang)%face(iface)%angflux,DIM=2))
+            ENDDO !iface
+          ENDDO !ig
         ENDDO !iang
         ALLOCATE(nmodrayseg(maxsegray))
         ALLOCATE(nextsurf(maxsegray))
@@ -635,6 +641,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
         nang = iangstp - iangstt + 1
         ALLOCATE(rtmeshireg(nlrays*maxsegray))
         ALLOCATE(hseg(nlrays*maxsegray))
+        ALLOCATE(angflux(npol,0:nfacerays-1,nfaces,ng,nang)); angflux = 0.0D0
         
         iray = 0
         nsegs = 0
@@ -669,6 +676,13 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             nsegs = nsegs + maxsegray
             nmodray(iray) = imodray
           ENDDO !ilray
+          DO ig=1,ng
+            DO iface=1,nfaces
+              ipol = SIZE(sweeper%phiang(ig)%angle(iang)%face(iface)%angflux,DIM=1)
+              i1 = SIZE(sweeper%phiang(ig)%angle(iang)%face(iface)%angflux,DIM=2)
+              angflux(1:ipol,0:i1-1,iface,ig,iang) = sweeper%phiang(ig)%angle(iang)%face(iface)%angflux
+            ENDDO !iface
+          ENDDO !ig
         ENDDO !iang
 
         WRITE(*,FMT='(a,i0,a,i0,a)') 'Solving ',nlrays,' rays and ',sweeper%nreg,' regions...'
@@ -716,11 +730,12 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
 !$acc loop private(exparg)
             DO ipol=1,npol
               DO iseg = 1,nseglray
+!                exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
                 exparg(iseg) = 1.0D0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
               ENDDO !iseg
 
-              phio1 = sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
-              phio2 = sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+              phio1 = angflux(ipol,ibc1,is1,ig,iang)
+              phio2 = angflux(ipol,ibc2,is2,ig,iang)
               iseg2 = nseglray + 1
         
               DO iseg1=1,nseglray
@@ -743,14 +758,13 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
                 phis(ireg2,ig) = phis(ireg2,ig) + phid2*wtang(ipol)
               ENDDO !iseg
         
-              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = phio2
-              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = phio1
+               angflux(ipol,ibc1,is1,ig,iang) = phio2
+               angflux(ipol,ibc2,is2,ig,iang) = phio1
             ENDDO !ipol
             IF(updateBC) THEN
               DO iface=1,nfaces
                 irefl = iang2irefl(iface,iang)
-                sweeper%phiang(ig)%angle(irefl)%face(iface)%angflux = &
-                  sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angflux
+                 angflux(:,:,iface,ig,irefl) = angflux(:,:,iface,ig,iang)
               ENDDO !iface
             ENDIF
           ENDDO !ig
