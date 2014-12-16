@@ -906,6 +906,7 @@ MODULE openmp
 
       DOUBLE PRECISION :: xval
       INTEGER :: ix,OMP_GET_THREAD_NUM,nproc
+      DOUBLE PRECISION :: OMP_GET_WTIME,oStt,oStp
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
@@ -916,6 +917,7 @@ MODULE openmp
       ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
       ALLOCATE(tphi(sweeper%nreg,nproc))
       CALL CPU_TIME(timerStt)
+      oStt=OMP_GET_WTIME()
 
 ! OPEN(FILE='a.out',UNIT=456)
 
@@ -1013,17 +1015,6 @@ MODULE openmp
         !MPACT says it's for polar angles, which I think is not true.
         tphi(:,ithd) = tphi(:,ithd) + SUM(phibar,DIM=1)
 
-! WRITE(456,*) ithd
-! !$OMP BARRIER
-
-! IF(ithd==1) THEN
-!   WRITE(456,*) ithd
-!   WRITE(456,*) phid(25)
-!   CLOSE(456)
-! ENDIF
-! !$OMP BARRIER
-! STOP 11
-
 !$OMP BARRIER
 
 !$OMP SINGLE
@@ -1040,11 +1031,13 @@ MODULE openmp
 !$OMP END PARALLEL
 
       CALL CPU_TIME(timerStp)
+      oStp=OMP_GET_WTIME()
       WRITE(*,*) "sweep time: ", timerStp-timerStt
+      WRITE(*,*) "sweep wall time: ", oStp-oStt
 
       !Reduce over threads
       DO ithd=1,nproc
-        PRINT*,ithd,nproc
+!         PRINT*,ithd,nproc
         sweeper%phis1g=sweeper%phis1g+tphi(:,ithd)
       ENDDO
 
