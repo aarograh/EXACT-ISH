@@ -45,7 +45,7 @@ MODULE fspSolver
         CASE(BASESOLVER)
           solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0
         CASE(VECTORIPOL)
-          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol3_2
+          solver%sweeper%sweep2D_prodquad => sweep2D_prodquad_P0_vectoripol3_3
         CASE(PGIBASESOLVER,ENERGYINNERSOLVER)
 !          solver%PGIsweeper%sweep2D_prodquad => sweep2D_prodquad_P0_PGI
           CONTINUE !PGI has no clue what procedure pointers are
