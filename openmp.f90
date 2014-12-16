@@ -924,6 +924,10 @@ MODULE openmp
       ALLOCATE(phio1(npol,0:sweeper%maxsegray))
       ALLOCATE(phio2(npol,1:sweeper%maxsegray+1))
       ALLOCATE(phibar(npol,sweeper%nreg))
+!       phid1=0.0D0
+!       phid2=0.0D0
+!       phio1=0.0D0
+!       phio2=0.0D0
       tphi(:,ithd) = 0.0D0
 PRINT*,ithd
 
