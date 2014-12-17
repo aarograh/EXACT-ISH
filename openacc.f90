@@ -598,6 +598,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
 
         ! Fill pre-sized arrays
         phis = 0.0
+!$acc enter data async copyin(phis)
         xstrmg = sweeper%xstrmg
 !$acc enter data async copyin(xstrmg)
         qbarmg = sweeper%qbarmg
@@ -710,17 +711,8 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             ENDDO !iface
           ENDDO !ig
         ENDDO !iang
-!$acc update async create(lrayiside)
-!$acc update async create(BCIndex)
-!$acc update async create(firstModRay)
-!$acc update async create(ifirstModMesh)
-!$acc update async create(nmods)
-!$acc update async create(nmodrays)
-!$acc update async create(nextsurf)
-!$acc update async create(nextray)
-!$acc update async create(rtmeshireg)
-!$acc update async create(hseg)
-!$acc update async create(angflux)
+!$acc update async device(lrayiside,BCIndex,firstModRay,ifirstModMesh,nmods,&
+!$acc & nmodrays,nextsurf,nextray,rtmeshireg,hseg,angflux)
 
         WRITE(*,FMT='(a,i0,a,i0,a)') 'Solving ',nlrays,' rays and ',sweeper%nreg,' regions...'
         CALL CPU_TIME(timeStt)
