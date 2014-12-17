@@ -715,13 +715,17 @@ test = 0
 !$acc & nmodrayseg,nextsurf,nextray,rtmeshireg,hseg,angflux)
 
         WRITE(*,FMT='(a,i0,a,i0,a)') 'Solving ',nlrays,' rays and ',sweeper%nreg,' regions...'
+!$acc wait
         CALL CPU_TIME(timeStt)
 !-----------------------------------------------------------------------------
-!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang) &
-!$acc & copyout(angflux,phis) present(nlongrays,wtheta,sinpolang,qbarmg, &
+!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang, &
+!$acc & nsegs,imodray,nrays,i1,irefl,iface,ipol,ilray,imray,im,iside,tau_seg, &
+!$acc & inextsurf,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,irg_seg,exparg, &
+!$acc & ireg1,ireg2) &
+!$acc & present(phis,angflux,nlongrays,wtheta,sinpolang,qbarmg, &
 !$acc & rsinpolang,lrayiside,bcindex,neigh,nextsurf,xstrmg,hseg, &
 !$acc & rtmeshireg,nmodrayseg,ifirstmodmesh,nmodray,nmods,iang2irefl,dlr,walpha)
-!$acc loop 
+!!$acc loop 
         DO iray = 1,nlrays
           nrays = 0
           DO iang=iangstt,iangstp
@@ -733,7 +737,7 @@ test = 0
           ENDDO !iang
           wtangazi = dlr(iang)*walpha(iang)*PI
           wtang = wtangazi*wtheta*sinpolang
-!$acc loop private(tau_seg,irg_seg)
+!!$acc loop
           DO ig=1,ng
             i1 = (iray-1)*maxsegray 
             imray = firstModRay(iray)
@@ -757,12 +761,12 @@ test = 0
             ibc2 = BCIndex(2,iray)
             is1 = lrayiside(1,iray)
             is2 = lrayiside(2,iray)
-
+ 
             nseglray = iseg
-!$acc loop private(exparg)
+!!$acc loop 
             DO ipol=1,npol
               DO iseg = 1,nseglray
-!                exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
+                !exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
                 exparg(iseg) = 1.0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
               ENDDO !iseg
 
@@ -772,21 +776,22 @@ test = 0
         
               DO iseg1=1,nseglray
                 phio1d = phio1
-                phio2d = phio2
-                iseg2 = iseg2 - 1
-          
                 ireg1 = irg_seg(iseg1)
                 phid1 = (phio1d - qbarmg(ireg1,ig)) * exparg(iseg1)
                 !phio1 stores the outgoing angular flux to be used for the next
                 !segment as incoming angular flux.
                 phio1 = phio1d - phid1
+!!$acc atomic
                 phis(ireg1,ig) = phis(ireg1,ig) + phid1*wtang(ipol)
         
+                phio2d = phio2
+                iseg2 = iseg2 - 1
                 ireg2 = irg_seg(iseg2)
                 phid2 = (phio2d - qbarmg(ireg2,ig)) * exparg(iseg2)
                 !phio1 stores the outgoing angular flux to be used for the next
                 !segment as incoming angular flux.
                 phio2 = phio2d - phid2
+!!$acc atomic
                 phis(ireg2,ig) = phis(ireg2,ig) + phid2*wtang(ipol)
               ENDDO !iseg
         
@@ -802,6 +807,8 @@ test = 0
           ENDDO !ig
         ENDDO !iray 
 !$acc end parallel
+!$acc update host(phis)
+!$acc update async host(angflux)
               
         sweeper%phis = phis
         

@@ -461,6 +461,7 @@ MODULE IO
           diff = (phis(ireg,ig) - compval)/compval
           maxdiff = MAX(maxdiff,ABS(diff))
           rmsdiff = rmsdiff + diff*diff
+WRITE(*,*) phis(ireg,ig),compval,diff
         ENDDO !ireg
       ENDDO !ig
 
