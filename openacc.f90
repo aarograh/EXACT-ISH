@@ -467,6 +467,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
                 rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
                 DO iseg=1,nseglray
                   exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+ !                 exparg(iseg) = 1.0D0 - EXP(tau_seg(iseg)*rpol)
                 ENDDO !iseg
 
                 phio1 = sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
@@ -539,7 +540,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       LOGICAL :: UpdateBC
-      INTEGER :: i,ig,iangstt,iangstp,maxneigh,maxsegray,nang,nsegs,imodray
+      INTEGER :: i,ig,iangstt,iangstp,maxsegray,nang,nsegs,imodray
       INTEGER :: nrays,ng,i1,irefl,iface,nfaces
       INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf
       INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
@@ -550,20 +551,20 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       INTEGER,ALLOCATABLE :: lrayiside(:,:),BCIndex(:,:),firstModRay(:),ifirstModMesh(:)
       INTEGER,ALLOCATABLE :: ifirstfsreg(:),nseg(:),rtmeshireg(:),nextsurf(:)
       INTEGER,ALLOCATABLE :: neigh(:,:),nmods(:),nmodray(:),nmodrayseg(:),nextray(:)
-      DOUBLE PRECISION :: timeStt,timeStp,timeTotal
-      DOUBLE PRECISION :: phid1,phid2,wsum,rpol
-      DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION :: phio1,phio1d,phio2,phio2d
-      DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
-      DOUBLE PRECISION :: exparg(sweeper%maxsegray)
-      DOUBLE PRECISION :: dlr(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
-      DOUBLE PRECISION :: walpha(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
-      DOUBLE PRECISION :: wtheta(SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION :: sinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION :: rsinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION :: xstrmg(sweeper%nreg,sweeper%ng),qbarmg(sweeper%nreg,sweeper%ng)
-      DOUBLE PRECISION :: phis(sweeper%nreg,sweeper%ng)
-      DOUBLE PRECISION,ALLOCATABLE :: angflux(:,:,:,:,:),hseg(:)
+      REAL,ALLOCATABLE :: angflux(:,:,:,:,:),hseg(:)
+      REAL :: dlr(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
+      REAL :: walpha(sweeper%modRayDat%iangstt:sweeper%modRayDat%iangstp)
+      REAL :: wtheta(SIZE(sweeper%modRayDat%angquad%wtheta))
+      REAL :: sinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
+      REAL :: rsinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
+      REAL :: phid1,phid2,wsum,rpol
+      REAL :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
+      REAL :: phio1,phio1d,phio2,phio2d
+      REAL :: tau_seg(sweeper%maxsegray)
+      REAL :: exparg(sweeper%maxsegray)
+      REAL :: xstrmg(sweeper%nreg,sweeper%ng),qbarmg(sweeper%nreg,sweeper%ng)
+      REAL :: phis(sweeper%nreg,sweeper%ng)
+      REAL :: timeStt,timeStp,timeTotal
       TYPE(LongRayType_Base) :: ilongRay
 
       timeTotal = 0.0D0
@@ -587,10 +588,8 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           sweeper%phis1gd = sweeper%phis(:,ig)
         ENDDO !ig
 
-        sweeper%phis = 0.0D0
-
         ithd = 1
-        wsum = 4.0D0*PI
+        wsum = 4.0*PI
         ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
 
         iangstt=sweeper%modRayDat%iangstt
@@ -598,26 +597,45 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
         npol=SIZE(sweeper%modRayDat%angquad%wtheta)
 
         ! Fill pre-sized arrays
-        phis = 0.0D0
+        phis = 0.0
         xstrmg = sweeper%xstrmg
+!$acc enter data async copyin(xstrmg)
         qbarmg = sweeper%qbarmg
+!$acc enter data async copyin(qbarmg)
         dlr = sweeper%modRayDat%angles(:)%dlr
+!$acc enter data async copyin(dlr)
         walpha = sweeper%modRayDat%angquad%walpha
+!$acc enter data async copyin(walpha)
         wtheta = sweeper%modRayDat%angquad%wtheta
+!$acc enter data async copyin(wtheta)
         sinpolang = sweeper%modRayDat%angquad%sinpolang
+!$acc enter data async copyin(sinpolang)
         rsinpolang = sweeper%modRayDat%angquad%rsinpolang
+!$acc enter data async copyin(rsinpolang)
         iang2irefl = sweeper%updateBC%iang2irefl
+!$acc enter data async copyin(iang2irefl)
         ifrstreg = sweeper%myModMesh%ifrstfsreg
+!$acc enter data async copyin(ifrstreg)
         ! Set some counters
         ng = sweeper%ng
+!$acc enter data async copyin(ng)
         nlongrays = sweeper%longRayDat%nlongrays
+!$acc enter data async copyin(nlongrays)
         nlrays = SUM(nlongrays)
+!$acc enter data async copyin(nlrays)
         nfaces = sweeper%updateBC%nfaces
+!$acc enter data async copyin(nfaces)
         ALLOCATE(lrayiside(2,nlrays)); ALLOCATE(BCIndex(2,nlrays))
+!$acc enter data async create(lrayiside)
+!$acc enter data async create(BCIndex)
         ALLOCATE(firstModRay(nlrays))
+!$acc enter data async create(firstModRay)
         ALLOCATE(ifirstModMesh(nlrays))
+!$acc enter data async create(ifirstModMesh)
         ALLOCATE(nmods(nlrays))
+!$acc enter data async create(nmods)
         ALLOCATE(nmodray(0:nlrays)); nmodray = 0
+!$acc enter data async copyin(nmodray)
         maxsegray = 0
         nfacerays = 0
         DO iang=iangstt,iangstp
@@ -631,17 +649,25 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           ENDDO !ig
         ENDDO !iang
         ALLOCATE(nmodrayseg(maxsegray))
+!$acc enter data async create(nmodrays)
         ALLOCATE(nextsurf(maxsegray))
+!$acc enter data async create(nextsurf)
         ALLOCATE(nextray(maxsegray))
+!$acc enter data async create(nextray)
         ALLOCATE(neigh(LBOUND(sweeper%myModMesh%neigh,DIM=1):UBOUND(sweeper%myModMesh%neigh,DIM=1), &
           LBOUND(sweeper%myModMesh%neigh,DIM=2):UBOUND(sweeper%myModMesh%neigh,DIM=2)))
         neigh = sweeper%myModMesh%neigh
-        maxneigh = MAXVAL(neigh)
+!$acc enter data async copyin(neigh)
         maxsegray = sweeper%maxsegray
+!$acc enter data async copyin(maxsegray)
         nang = iangstp - iangstt + 1
+!$acc enter data async copyin(nang)
         ALLOCATE(rtmeshireg(nlrays*maxsegray))
+!$acc enter data async create(rtmeshireg)
         ALLOCATE(hseg(nlrays*maxsegray))
-        ALLOCATE(angflux(npol,0:nfacerays-1,nfaces,ng,nang)); angflux = 0.0D0
+!$acc enter data async create(hseg)
+        ALLOCATE(angflux(npol,0:nfacerays-1,nfaces,ng,nang)); angflux = 0.0
+!$acc enter data async create(angflux)
         
         iray = 0
         nsegs = 0
@@ -684,12 +710,23 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             ENDDO !iface
           ENDDO !ig
         ENDDO !iang
+!$acc update async create(lrayiside)
+!$acc update async create(BCIndex)
+!$acc update async create(firstModRay)
+!$acc update async create(ifirstModMesh)
+!$acc update async create(nmods)
+!$acc update async create(nmodrays)
+!$acc update async create(nextsurf)
+!$acc update async create(nextray)
+!$acc update async create(rtmeshireg)
+!$acc update async create(hseg)
+!$acc update async create(angflux)
 
         WRITE(*,FMT='(a,i0,a,i0,a)') 'Solving ',nlrays,' rays and ',sweeper%nreg,' regions...'
         CALL CPU_TIME(timeStt)
 !-----------------------------------------------------------------------------
 !$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang) 
-!$acc loop
+!$acc loop copyout(angflux,phis)
         DO iray = 1,nlrays
           nrays = 0
           DO iang=iangstt,iangstp
@@ -731,7 +768,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             DO ipol=1,npol
               DO iseg = 1,nseglray
 !                exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
-                exparg(iseg) = 1.0D0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
+                exparg(iseg) = 1.0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
               ENDDO !iseg
 
               phio1 = angflux(ipol,ibc1,is1,ig,iang)
