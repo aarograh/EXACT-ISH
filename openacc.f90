@@ -559,7 +559,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       REAL :: rsinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
       REAL :: phid1,phid2,wsum,rpol
       REAL :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      REAL :: phio1,phio1d,phio2,phio2d
+      REAL :: phio1,phio1d,phio2,phio2d,tmp
       REAL :: tau_seg(sweeper%maxsegray)
       REAL :: exparg(sweeper%maxsegray)
       REAL :: xstrmg(sweeper%nreg,sweeper%ng),qbarmg(sweeper%nreg,sweeper%ng)
@@ -598,7 +598,6 @@ test = 0
 
         ! Fill pre-sized arrays
         phis = 0.0
-!$acc enter data async copyin(phis)
         xstrmg = sweeper%xstrmg
 !$acc enter data async copyin(xstrmg)
         qbarmg = sweeper%qbarmg
@@ -718,14 +717,16 @@ test = 0
 !$acc wait
         CALL CPU_TIME(timeStt)
 !-----------------------------------------------------------------------------
-!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang, &
-!$acc & nsegs,imodray,nrays,i1,irefl,iface,ipol,ilray,imray,im,iside,tau_seg, &
-!$acc & inextsurf,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,irg_seg,exparg, &
-!$acc & ireg1,ireg2) &
-!$acc & present(phis,angflux,nlongrays,wtheta,sinpolang,qbarmg, &
-!$acc & rsinpolang,lrayiside,bcindex,neigh,nextsurf,xstrmg,hseg, &
-!$acc & rtmeshireg,nmodrayseg,ifirstmodmesh,nmodray,nmods,iang2irefl,dlr,walpha)
-!!$acc loop 
+!!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang, &
+!!$acc & nsegs,imodray,nrays,i1,irefl,iface,ipol,ilray,imray,im,iside,tau_seg, &
+!!$acc & inextsurf,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,irg_seg,exparg, &
+!!!$acc & ireg1,ireg2) &
+!!$acc & present(phis,angflux,nlongrays,wtheta,sinpolang,qbarmg, &
+!!$acc & rsinpolang,lrayiside,bcindex,neigh,nextsurf,xstrmg,hseg, &
+!!$acc & rtmeshireg,nmodrayseg,ifirstmodmesh,nmodray,nmods,iang2irefl,dlr,walpha)
+!$acc parallel private(phis)
+phis = 0.0
+!$acc loop
         DO iray = 1,nlrays
           nrays = 0
           DO iang=iangstt,iangstp
@@ -806,9 +807,19 @@ test = 0
             ENDIF
           ENDDO !ig
         ENDDO !iray 
+DO ireg=1,SIZE(phis,DIM=1)
+  DO ig=1,ng
+    tmp = phis(ireg,ig)
+!$acc loop reduction(+ : tmp)
+    DO i1=1,1
+      tmp = tmp + 0.0
+    ENDDO !i1
+    phis(ireg,ig) = tmp
+  ENDDO !ig
+ENDDO !ireg
 !$acc end parallel
-!$acc update host(phis)
-!$acc update async host(angflux)
+!!$acc update host(phis)
+!!$acc update async host(angflux)
               
         sweeper%phis = phis
         
