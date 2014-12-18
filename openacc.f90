@@ -540,7 +540,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
       ! Local Variables
       LOGICAL :: UpdateBC
-      INTEGER :: i,ig,iangstt,iangstp,maxsegray,nang,nsegs,imodray
+      INTEGER :: i,ig,iangstt,iangstp,maxsegray,nang,nsegs,imodray,test
       INTEGER :: nrays,ng,i1,irefl,iface,nfaces
       INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf
       INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
@@ -559,7 +559,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       REAL :: rsinpolang(SIZE(sweeper%modRayDat%angquad%wtheta))
       REAL :: phid1,phid2,wsum,rpol
       REAL :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      REAL :: phio1,phio1d,phio2,phio2d
+      REAL :: phio1,phio1d,phio2,phio2d,tmp
       REAL :: tau_seg(sweeper%maxsegray)
       REAL :: exparg(sweeper%maxsegray)
       REAL :: xstrmg(sweeper%nreg,sweeper%ng),qbarmg(sweeper%nreg,sweeper%ng)
@@ -568,7 +568,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
       TYPE(LongRayType_Base) :: ilongRay
 
       timeTotal = 0.0D0
-
+test = 0
       DO ig=1,sweeper%ng
         ! Set up external and fission source
         source%qi1g => source%qimg(:,ig)
@@ -598,7 +598,6 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
 
         ! Fill pre-sized arrays
         phis = 0.0
-!$acc enter data async copyin(phis)
         xstrmg = sweeper%xstrmg
 !$acc enter data async copyin(xstrmg)
         qbarmg = sweeper%qbarmg
@@ -650,7 +649,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           ENDDO !ig
         ENDDO !iang
         ALLOCATE(nmodrayseg(maxsegray))
-!$acc enter data async create(nmodrays)
+!$acc enter data async create(nmodrayseg)
         ALLOCATE(nextsurf(maxsegray))
 !$acc enter data async create(nextsurf)
         ALLOCATE(nextray(maxsegray))
@@ -688,7 +687,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             DO imod = 1,ilongRay%nmods
               imodray = imodray + 1
               nmodrayseg(imodray) = sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%nseg
-              DO imseg=1,sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%nseg
+              DO imseg=1,nmodrayseg(imodray)
                 iseg = iseg + 1
                 ireg = ifrstreg(im) - ifrstreg_proc + &
                   sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%ireg(imseg)
@@ -712,13 +711,22 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           ENDDO !ig
         ENDDO !iang
 !$acc update async device(lrayiside,BCIndex,firstModRay,ifirstModMesh,nmods,&
-!$acc & nmodrays,nextsurf,nextray,rtmeshireg,hseg,angflux)
+!$acc & nmodrayseg,nextsurf,nextray,rtmeshireg,hseg,angflux)
 
         WRITE(*,FMT='(a,i0,a,i0,a)') 'Solving ',nlrays,' rays and ',sweeper%nreg,' regions...'
+!$acc wait
         CALL CPU_TIME(timeStt)
 !-----------------------------------------------------------------------------
-!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang) 
-!$acc loop copyout(angflux,phis)
+!!$acc parallel private(phio1,phio2,phio1d,phio2d,ig,iang,imod,imseg,ireg,wtang, &
+!!$acc & nsegs,imodray,nrays,i1,irefl,iface,ipol,ilray,imray,im,iside,tau_seg, &
+!!$acc & inextsurf,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,irg_seg,exparg, &
+!!!$acc & ireg1,ireg2) &
+!!$acc & present(phis,angflux,nlongrays,wtheta,sinpolang,qbarmg, &
+!!$acc & rsinpolang,lrayiside,bcindex,neigh,nextsurf,xstrmg,hseg, &
+!!$acc & rtmeshireg,nmodrayseg,ifirstmodmesh,nmodray,nmods,iang2irefl,dlr,walpha)
+!$acc parallel private(phis)
+phis = 0.0
+!$acc loop
         DO iray = 1,nlrays
           nrays = 0
           DO iang=iangstt,iangstp
@@ -730,7 +738,7 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
           ENDDO !iang
           wtangazi = dlr(iang)*walpha(iang)*PI
           wtang = wtangazi*wtheta*sinpolang
-!$acc loop private(tau_seg,irg_seg)
+!!$acc loop
           DO ig=1,ng
             i1 = (iray-1)*maxsegray 
             imray = firstModRay(iray)
@@ -754,12 +762,12 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             ibc2 = BCIndex(2,iray)
             is1 = lrayiside(1,iray)
             is2 = lrayiside(2,iray)
-
+ 
             nseglray = iseg
-!$acc loop private(exparg)
+!!$acc loop 
             DO ipol=1,npol
               DO iseg = 1,nseglray
-!                exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
+                !exparg(iseg) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rsinpolang(ipol))
                 exparg(iseg) = 1.0 - EXP(tau_seg(iseg)*rsinpolang(ipol))
               ENDDO !iseg
 
@@ -769,21 +777,22 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
         
               DO iseg1=1,nseglray
                 phio1d = phio1
-                phio2d = phio2
-                iseg2 = iseg2 - 1
-          
                 ireg1 = irg_seg(iseg1)
                 phid1 = (phio1d - qbarmg(ireg1,ig)) * exparg(iseg1)
                 !phio1 stores the outgoing angular flux to be used for the next
                 !segment as incoming angular flux.
                 phio1 = phio1d - phid1
+!!$acc atomic
                 phis(ireg1,ig) = phis(ireg1,ig) + phid1*wtang(ipol)
         
+                phio2d = phio2
+                iseg2 = iseg2 - 1
                 ireg2 = irg_seg(iseg2)
                 phid2 = (phio2d - qbarmg(ireg2,ig)) * exparg(iseg2)
                 !phio1 stores the outgoing angular flux to be used for the next
                 !segment as incoming angular flux.
                 phio2 = phio2d - phid2
+!!$acc atomic
                 phis(ireg2,ig) = phis(ireg2,ig) + phid2*wtang(ipol)
               ENDDO !iseg
         
@@ -798,12 +807,24 @@ WRITE(*,*) ASSOCIATED(sweeper%qbarmg)
             ENDIF
           ENDDO !ig
         ENDDO !iray 
+DO ireg=1,SIZE(phis,DIM=1)
+  DO ig=1,ng
+    tmp = phis(ireg,ig)
+!$acc loop reduction(+ : tmp)
+    DO i1=1,1
+      tmp = tmp + 0.0
+    ENDDO !i1
+    phis(ireg,ig) = tmp
+  ENDDO !ig
+ENDDO !ireg
 !$acc end parallel
+!!$acc update host(phis)
+!!$acc update async host(angflux)
               
         sweeper%phis = phis
         
         DO ig=1,sweeper%ng
-          sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)* &
+          sweeper%phis(:,ig) = sweeper%phis(:,ig)/(xstrmg(:,ig)* &
             sweeper%vol/sweeper%pz) + sweeper%qbarmg(:,ig)*wsum
         ENDDO !ig
 
