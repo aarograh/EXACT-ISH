@@ -458,14 +458,14 @@ MODULE IO
       DO ig=1,ngroups
         DO ireg=1,nreg
           READ(solFileUnitNo) compval
-          diff = (phis(ireg,ig) - compval)/compval
+          diff = phis(ireg,ig) - compval
           maxdiff = MAX(maxdiff,ABS(diff))
           rmsdiff = rmsdiff + diff*diff
-! WRITE(*,*) phis(ireg,ig),compval,diff
+!          WRITE(*,*) phis(ireg,ig),compval,diff
         ENDDO !ireg
       ENDDO !ig
 
-      rmsdiff = SQRT(rmsdiff)
+      rmsdiff = SQRT(rmsdiff/(ngroups*nreg))
 
       WRITE(*,*)
       WRITE(*,*) 'RMS Difference = ',rmsdiff
