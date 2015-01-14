@@ -215,12 +215,12 @@ MODULE sweeperUtils
       ! Assumes no XS splitting (See SourceTypes.f90:470
       DO ix=1,thisSrc%nxsreg
 !WRITE(*,*) ix,ig,':',SIZE(thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from)
-        xssgg = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig)
+        !xssgg = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig)
         xstrg = thisSrc%myXSMesh(ix)%xsmactr(ig)
         rxstrg4pi = r4pi/xstrg
         DO ir=1,thisSrc%myXSMesh(ix)%nreg
           ireg = thisSrc%myXSMesh(ix)%ireg(ir)
-          qbar(ireg) = (qbar(ireg) + xssgg*phis1g(ireg))*rxstrg4pi
+          qbar(ireg) = (qbar(ireg))*rxstrg4pi
         ENDDO !ir
       ENDDO !ix
 
