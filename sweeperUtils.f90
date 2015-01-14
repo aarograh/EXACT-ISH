@@ -41,7 +41,7 @@ MODULE sweeperUtils
     INTEGER :: nxsreg=0
     INTEGER :: ng=0
     DOUBLE PRECISION,POINTER :: phis(:,:) => NULL()
-
+    DOUBLE PRECISION,POINTER :: phisd(:,:) => NULL()
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     DOUBLE PRECISION,POINTER :: split(:) => NULL()
     DOUBLE PRECISION,POINTER :: qextmg(:,:) => NULL()
@@ -272,7 +272,7 @@ MODULE sweeperUtils
               DO ir=1,thisSrc%myXSMesh(ix)%nreg
                 ireg = thisSrc%myXSMesh(ix)%ireg(ir)
                 thisSrc%qi1g(ireg) = thisSrc%qi1g(ireg) +  &
-                  xss_ig2_to_ig*thisSrc%phis(ireg,ig2)
+                  xss_ig2_to_ig*(thisSrc%phis(ireg,ig2)-thisSrc%phisd(ireg,ig2))
               ENDDO
             ENDIF
           ENDIF
