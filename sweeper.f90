@@ -30,8 +30,12 @@ MODULE sweeper
     DOUBLE PRECISION,ALLOCATABLE :: phis1gd(:)
     DOUBLE PRECISION,POINTER :: phis(:,:)
     DOUBLE PRECISION,POINTER :: xstr(:) => NULL()
+    !for use in group inner
+    DOUBLE PRECISION,POINTER :: xstrmg(:,:) => NULL()
     DOUBLE PRECISION,POINTER :: vol(:) => NULL()
     DOUBLE PRECISION,POINTER :: qbar(:) => NULL()
+    !for use in group inenr
+    DOUBLE PRECISION,POINTER : qbarmg(:,:) => NULL()
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
