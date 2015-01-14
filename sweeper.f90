@@ -39,6 +39,7 @@ MODULE sweeper
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
+    TYPE(AngFluxBC),ALLOCATABLE :: phiangmg_out(:)
     TYPE(AngFluxBC),POINTER :: phiang(:)
     CLASS(SourceType_P0),POINTER :: mySrc => NULL()
     TYPE(ModMeshType),POINTER :: myModMesh => NULL()
@@ -90,6 +91,9 @@ MODULE sweeper
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       CLASS(sourceType),POINTER,INTENT(INOUT) :: source
 
+      ! Local Variables
+      INTEGER :: ig,iang,iface,i1,i2,i3,i4
+
       ! Set up source
       ALLOCATE(SourceType_P0 :: source)
       SELECTTYPE(source); TYPE IS(SourceType_P0)
@@ -125,6 +129,23 @@ MODULE sweeper
       sweeper%xstrmg = 0.0D0
       ALLOCATE(sweeper%qbarmg(sweeper%nreg,sweeper%ng))
       sweeper%qbarmg = 0.0D0
+
+      ALLOCATE(sweeper%phiangmg_out(sweeper%ng))
+      DO ig=1,sweeper%ng
+        i1 = SIZE(sweeper%phiang1g_out%angle)
+        ALLOCATE(sweeper%phiangmg_out(ig)%angle(i1))
+        DO iang=1,i1
+          i2 = SIZE(sweeper%phiang1g_out%angle(iang)%face)
+          ALLOCATE(sweeper%phiangmg_out(ig)%angle(iang)%face(i2))
+          DO iface=1,i2
+            i3 = SIZE(sweeper%phiang1g_out%angle(iang)%face(iface)%angFlux,DIM=1)
+            i4 = SIZE(sweeper%phiang1g_out%angle(iang)%face(iface)%angFlux,DIM=2)
+            ALLOCATE(sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angFlux( &
+              i3,0:i4-1))
+            sweeper%phiangmg_out(ig)%angle(iang)%face(iface)%angFlux = 0.0D0
+          ENDDO !iface
+        ENDDO !iang
+      ENDDO !ig
 
       ! Set up expoa and expob for exponential inlining
       IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &

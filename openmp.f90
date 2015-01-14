@@ -1053,11 +1053,13 @@ MODULE openmp
       DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
+      DOUBLE PRECISION :: hseg(sweeper%maxsegray)
       DOUBLE PRECISION :: &
         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
       TYPE(LongRayType_Base) :: ilongRay
-      DOUBLE PRECISION :: timerStt,timerStp
+
+      INTEGER :: ig
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
@@ -1067,7 +1069,6 @@ MODULE openmp
       ALLOCATE(phibar(sweeper%nreg))
       tphi(:,ithd) = 0.0D0
 
-      CALL CPU_TIME(timerStt)
       DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
         wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
           sweeper%modRayDat%angquad%walpha(iang)*PI
@@ -1096,8 +1097,9 @@ MODULE openmp
               ireg = ifrstreg - ifrstreg_proc + &
                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%ireg(imseg)
               iseg = iseg + 1
-              tau_seg(iseg) = -sweeper%xstr(ireg)* &
-                sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+!               tau_seg(iseg) = -sweeper%xstr(ireg)* &
+!                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
               irg_seg(iseg) = ireg
             ENDDO !imseg
 
@@ -1108,60 +1110,76 @@ MODULE openmp
 
           nseglray = iseg
 
-          DO ipol=1,npol
-            rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-            DO iseg=1,nseglray
-              exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
-            ENDDO !iseg
-          ENDDO !ipol
+!           DO ipol=1,npol
+!             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+!             DO iseg=1,nseglray
+!               exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+!             ENDDO !iseg
+!           ENDDO !ipol
 
-          DO ipol=1,npol
-            phio1(0) = &
-              sweeper%phiang1g_in%angle(iang)%face(is1)%angflux(ipol,ibc1)
-            phio2(nseglray+1) = &
-              sweeper%phiang1g_in%angle(iang)%face(is2)%angflux(ipol,ibc2)
-            iseg2 = nseglray + 1
+          DO ig=1,sweeper%ng
 
-            DO iseg1=1,nseglray
-              iseg2 = iseg2 - 1
+            sweeper%xstr => sweeper%xstrmg(:,ig)
+            sweeper%qbar => sweeper%qbarmg(:,ig)
+            sweeper%activeg=ig
 
-              ireg1 = irg_seg(iseg1)
-              phid1 = phio1(iseg1-1) - sweeper%qbar(ireg1)
-              phid1 = phid1*exparg(iseg1,ipol)
-              !phio1 stores the outgoing angular flux to be used for the next
-              !segment as incoming angular flux.
-              phio1(iseg1) = phio1(iseg1-1) - phid1
-              phibar(ireg1) = phibar(ireg1) + phid1*wtang(ipol)
+            DO ipol=1,npol
+              rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+              DO iseg=1,nseglray
+                ireg=irg_seg(iseg)
+                exparg(iseg,ipol) = sweeper%expTableDat%EXPT(-sweeper%xstr(ireg)*hseg(iseg)*rpol)
+              ENDDO !iseg
+            ENDDO !ipol
 
-              ireg2 = irg_seg(iseg2)
-              phid2 = phio2(iseg2+1) - sweeper%qbar(ireg2)
-              phid2 = phid2*exparg(iseg2,ipol)
-              !phio1 stores the outgoing angular flux to be used for the next
-              !segment as incoming angular flux.
-              phio2(iseg2) = phio2(iseg2+1) - phid2
-              phibar(ireg2) = phibar(ireg2) + phid2*wtang(ipol)
-            ENDDO !iseg
+            DO ipol=1,npol
+              phio1(0) = &
+                sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2(nseglray+1) = &
+                sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+              iseg2 = nseglray + 1
 
-            sweeper%phiang1g_out%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
-              phio2(1)
-            sweeper%phiang1g_out%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
-              phio1(nseglray)
-          ENDDO !ipol
+              DO iseg1=1,nseglray
+                iseg2 = iseg2 - 1
+
+                ireg1 = irg_seg(iseg1)
+                phid1 = phio1(iseg1-1) - sweeper%qbarmg(ireg1,ig)
+                phid1 = phid1*exparg(iseg1,ipol)
+                !phio1 stores the outgoing angular flux to be used for the next
+                !segment as incoming angular flux.
+                phio1(iseg1) = phio1(iseg1-1) - phid1
+                sweeper%phis(ireg1,ig) = sweeper%phis(ireg1,ig) + phid1*wtang(ipol)
+
+                ireg2 = irg_seg(iseg2)
+                phid2 = phio2(iseg2+1) - sweeper%qbarmg(ireg2,ig)
+                phid2 = phid2*exparg(iseg2,ipol)
+                !phio1 stores the outgoing angular flux to be used for the next
+                !segment as incoming angular flux.
+                phio2(iseg2) = phio2(iseg2+1) - phid2
+                sweeper%phis(ireg2,ig) = sweeper%phis(ireg2,ig) + phid2*wtang(ipol)
+              ENDDO !iseg
+
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
+                phio2(1)
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
+                phio1(nseglray)
+            ENDDO !ipol
+          ENDDO !ig
         ENDDO !ilray
 
         !This is to sum over the angles owned by the current proc.
         !MPACT says it's for polar angles, which I think is not true.
-        tphi(:,ithd) = tphi(:,ithd) + phibar
-        CALL sweeper%UpdateBC%Start(iang,sweeper%phiang1g_out,sweeper%phiang1g_in)
+!         tphi(:,ithd) = tphi(:,ithd) + phibar
+        DO ig=1,sweeper%ng
+          CALL sweeper%UpdateBC%Start(iang,sweeper%phiangmg_out(ig),sweeper%phiang(ig))
+        ENDDO !ig
       ENDDO !iang
-      CALL CPU_TIME(timerStp)
-      WRITE(*,*) "sweep time: ", timerStp-timerStt
 
-      DEALLOCATE(phibar)
 
-      sweeper%phis1g = sweeper%phis1g + tphi(:,ithd)
-      sweeper%phis1g = sweeper%phis1g/(sweeper%xstr*sweeper%vol/sweeper%pz) + &
-        sweeper%qbar*wsum
+
+      DO ig=1,sweeper%ng
+        sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
+          sweeper%qbarmg(:,ig)*wsum
+      ENDDO !ig
 
     ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol4
 
