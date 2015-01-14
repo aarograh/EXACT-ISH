@@ -35,7 +35,7 @@ MODULE sweeper
     DOUBLE PRECISION,POINTER :: vol(:) => NULL()
     DOUBLE PRECISION,POINTER :: qbar(:) => NULL()
     !for use in group inenr
-    DOUBLE PRECISION,POINTER : qbarmg(:,:) => NULL()
+    DOUBLE PRECISION,POINTER :: qbarmg(:,:) => NULL()
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     TYPE(AngFluxBC),POINTER :: phiang1g_in => NULL()
     TYPE(AngFluxBC) :: phiang1g_out
@@ -103,7 +103,7 @@ MODULE sweeper
       source%nxsreg = sweeper%nxsreg
       source%ng = sweeper%ng
       source%phis => sweeper%phis
-      source%phisd => sweeper%phisd
+      ALLOCATE(source%phisd(source%nreg,source%ng))
       !temporary set to zero for use in group inner
       source%phisd = 0.0D0
       source%myXSMesh => sweeper%myXSMesh
