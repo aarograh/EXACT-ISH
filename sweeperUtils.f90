@@ -173,10 +173,10 @@ MODULE sweeperUtils
   END TYPE UpdateBCType_MOC
 
   ABSTRACT INTERFACE
-    SUBROUTINE absintfc_initExtSource(thisSrc,ig)
+    SUBROUTINE absintfc_initExtSource(thisSrc)
       IMPORT :: Sourcetype
       CLASS(SourceType),INTENT(INOUT) :: thisSrc
-      INTEGER,INTENT(IN) :: ig
+!       INTEGER,INTENT(IN) :: ig
     END SUBROUTINE absintfc_initExtSource
   END INTERFACE
 
@@ -226,11 +226,11 @@ MODULE sweeperUtils
 
     END SUBROUTINE updateSelfScatter_P0
 !===============================================================================
-    SUBROUTINE initExtSource_P0(thisSrc,ig)
+    SUBROUTINE initExtSource_P0(thisSrc)
       CLASS(SourceType_P0),INTENT(INOUT) :: thisSrc
-      INTEGER,INTENT(IN) :: ig
+!       INTEGER,INTENT(IN) :: ig
 
-      thisSrc%qi1g = thisSrc%qextmg(:,ig)
+      thisSrc%qimg = thisSrc%qextmg
 
     END SUBROUTINE initExtSource_P0
 !===============================================================================
