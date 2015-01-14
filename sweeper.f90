@@ -227,7 +227,7 @@ MODULE sweeper
       DO ig=1,sweeper%ng
         ! Set up source
 !         CALL source%initExtSource(ig)
-        CALL source%computeMGFS(ig,psi)
+!         CALL source%computeMGFS(ig,psi)
         CALL source%updateInScatter( &
           ig,sweeper%igstt,sweeper%igstp)
         CALL sweeper%setExtSource(source)
@@ -289,17 +289,16 @@ MODULE sweeper
 
       ! Group loop.  This is actualy in FixedSrcSolver in MPACT
       CALL source%initExtSource()
+      CALL source%computeMGFS(psi)
       DO ig=1,sweeper%ng
         ! Set up generic external source and fission source
 
-        CALL source%computeMGFS(ig,psi)
         CALL source%updateInScatter( &
           ig,sweeper%igstt,sweeper%igstp)
         CALL sweeper%setExtSource(source)
       ENDDO !ig
 
       DO ig=1,sweeper%ng
-      DO ig=
         ! This is the real beginning of the sweep routines in MPACT
         IF(1 <= ig .AND. ig <= sweeper%ng) THEN
           sweeper%activeg = ig

@@ -181,10 +181,10 @@ MODULE sweeperUtils
   END INTERFACE
 
   ABSTRACT INTERFACE
-    SUBROUTINE absintfc_computeMGFS(thisSrc,ig,psi)
+    SUBROUTINE absintfc_computeMGFS(thisSrc,psi)
       IMPORT SourceType
       CLASS(SourceType),INTENT(INOUT) :: thisSrc
-      INTEGER,INTENT(IN) :: ig
+!       INTEGER,INTENT(IN) :: ig
       DOUBLE PRECISION,INTENT(IN) :: psi(:)
     END SUBROUTINE absintfc_computeMGFS
   END INTERFACE
@@ -234,22 +234,25 @@ MODULE sweeperUtils
 
     END SUBROUTINE initExtSource_P0
 !===============================================================================
-    SUBROUTINE computeMGFS_P0(thisSrc,ig,psi)
+    SUBROUTINE computeMGFS_P0(thisSrc,psi)
       CLASS(SourceType_P0),INTENT(INOUT) :: thisSrc
-      INTEGER,INTENT(IN) :: ig
+!       INTEGER,INTENT(IN) :: ig
       DOUBLE PRECISION,INTENT(IN) :: psi(:)
       ! Local variables
       INTEGER :: ix,ir,ireg
       DOUBLE PRECISION :: chireg
+      INTEGER :: ig
 
-      DO ix=1,thisSrc%nxsreg
-        IF(ALLOCATED(thisSrc%myXSMesh(ix)%xsmacchi)) THEN
-          chireg = thisSrc%myXSMesh(ix)%xsmacchi(ig)
-          DO ir=1,thisSrc%myXSMesh(ix)%nreg
-            ireg = thisSrc%myXSMesh(ix)%ireg(ir)
-            thisSrc%qi1g(ireg) = thisSrc%qi1g(ireg) + psi(ireg)*chireg
-          ENDDO
-        ENDIF
+      DO ig=1,thisSrc%ng
+        DO ix=1,thisSrc%nxsreg
+          IF(ALLOCATED(thisSrc%myXSMesh(ix)%xsmacchi)) THEN
+            chireg = thisSrc%myXSMesh(ix)%xsmacchi(ig)
+            DO ir=1,thisSrc%myXSMesh(ix)%nreg
+              ireg = thisSrc%myXSMesh(ix)%ireg(ir)
+              thisSrc%qimg(ireg,ig) = thisSrc%qimg(ireg,ig) + psi(ireg)*chireg
+            ENDDO
+          ENDIF
+        ENDDO
       ENDDO
 
     END SUBROUTINE computeMGFS_P0
