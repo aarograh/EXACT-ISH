@@ -22,6 +22,9 @@ MODULE openmp
   PUBLIC :: sweep2D_prodquad_P0_vectoripol3_3
   !group inner
   PUBLIC :: sweep2D_prodquad_P0_vectoripol4
+  !group innermost
+  PUBLIC :: sweep2D_prodquad_P0_vectoripol5
+
 
   CONTAINS
 !===============================================================================
@@ -1180,5 +1183,146 @@ MODULE openmp
       ENDDO !ig
 
     ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol4
+!===============================================================================
+    !This version is the same as the base sweeper
+    SUBROUTINE sweep2D_prodquad_P0_vectoripol5(sweeper,i)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: i
+      ! Local Variables
+      INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf,ifrstreg
+      INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
+      INTEGER :: irg_seg(0:sweeper%maxsegray),ithd
+      INTEGER :: ifrstreg_proc,ireg1,ireg2
+      DOUBLE PRECISION :: phid1,phid2,wsum,rpol
+      DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
+      DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
+      DOUBLE PRECISION :: tphi(sweeper%nreg,1)
+      DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
+      DOUBLE PRECISION :: hseg(sweeper%maxsegray)
+      DOUBLE PRECISION :: &
+        exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
+      DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
+      TYPE(LongRayType_Base) :: ilongRay
 
+      INTEGER :: ig
+
+      ithd = 1
+      npol = SIZE(sweeper%modRayDat%angquad%wtheta)
+      wsum = 4.0D0*PI
+      ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
+
+      ALLOCATE(phibar(sweeper%nreg))
+      tphi(:,ithd) = 0.0D0
+
+      DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
+        wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
+          sweeper%modRayDat%angquad%walpha(iang)*PI
+        DO ipol=1,npol
+          wtang(ipol) = wtangazi*sweeper%modRayDat%angquad%wtheta(ipol)* &
+            sweeper%modRayDat%angquad%sinpolang(ipol)
+        ENDDO !ipol
+
+        phibar = 0.0D0
+
+        DO ilray=1,sweeper%longRayDat%nlongrays(iang)
+          ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
+          im = ilongRay%ifirstModMesh
+          iside = ilongRay%iside(1)
+          imray = ilongRay%firstModRay
+          ibc1 = ilongRay%BCIndex(1)
+          ibc2 = ilongRay%BCIndex(2)
+          is1 = ilongRay%iside(1)
+          is2 = ilongRay%iside(2)
+          iseg = 0
+
+          DO imod=1,ilongRay%nmods
+            ifrstreg = sweeper%myModMesh%ifrstfsreg(im)
+
+            DO imseg=1,sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%nseg
+              ireg = ifrstreg - ifrstreg_proc + &
+                sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%ireg(imseg)
+              iseg = iseg + 1
+!               tau_seg(iseg) = -sweeper%xstr(ireg)* &
+!                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              irg_seg(iseg) = ireg
+            ENDDO !imseg
+
+            inextsurf = sweeper%modRayDat%angles(iang)%rays(imray)%nextsurf(1)
+            imray = sweeper%modRayDat%angles(iang)%rays(imray)%nextray(1)
+            im = sweeper%myModMesh%neigh(inextsurf,im)
+          ENDDO !imod
+
+          nseglray = iseg
+
+!           DO ipol=1,npol
+!             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+!             DO iseg=1,nseglray
+!               exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
+!             ENDDO !iseg
+!           ENDDO !ipol
+
+          DO ig=1,sweeper%ng
+
+            sweeper%xstr => sweeper%xstrmg(:,ig)
+            sweeper%qbar => sweeper%qbarmg(:,ig)
+            sweeper%activeg=ig
+
+            DO ipol=1,npol
+              rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
+              DO iseg=1,nseglray
+                ireg=irg_seg(iseg)
+                exparg(iseg,ipol) = sweeper%expTableDat%EXPT(-sweeper%xstr(ireg)*hseg(iseg)*rpol)
+              ENDDO !iseg
+            ENDDO !ipol
+
+            DO ipol=1,npol
+              phio1(0) = &
+                sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2(nseglray+1) = &
+                sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+              iseg2 = nseglray + 1
+
+              DO iseg1=1,nseglray
+                iseg2 = iseg2 - 1
+
+                ireg1 = irg_seg(iseg1)
+                phid1 = phio1(iseg1-1) - sweeper%qbarmg(ireg1,ig)
+                phid1 = phid1*exparg(iseg1,ipol)
+                !phio1 stores the outgoing angular flux to be used for the next
+                !segment as incoming angular flux.
+                phio1(iseg1) = phio1(iseg1-1) - phid1
+                sweeper%phis(ireg1,ig) = sweeper%phis(ireg1,ig) + phid1*wtang(ipol)
+
+                ireg2 = irg_seg(iseg2)
+                phid2 = phio2(iseg2+1) - sweeper%qbarmg(ireg2,ig)
+                phid2 = phid2*exparg(iseg2,ipol)
+                !phio1 stores the outgoing angular flux to be used for the next
+                !segment as incoming angular flux.
+                phio2(iseg2) = phio2(iseg2+1) - phid2
+                sweeper%phis(ireg2,ig) = sweeper%phis(ireg2,ig) + phid2*wtang(ipol)
+              ENDDO !iseg
+
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
+                phio2(1)
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
+                phio1(nseglray)
+            ENDDO !ipol
+          ENDDO !ig
+        ENDDO !ilray
+
+        !This is to sum over the angles owned by the current proc.
+        !MPACT says it's for polar angles, which I think is not true.
+!         tphi(:,ithd) = tphi(:,ithd) + phibar
+        DO ig=1,sweeper%ng
+          CALL sweeper%UpdateBC%Start(iang,sweeper%phiangmg_out(ig),sweeper%phiang(ig))
+        ENDDO !ig
+      ENDDO !iang
+
+      DO ig=1,sweeper%ng
+        sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
+          sweeper%qbarmg(:,ig)*wsum
+      ENDDO !ig
+
+    ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol5
 ENDMODULE openmp
