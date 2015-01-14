@@ -267,7 +267,7 @@ MODULE sweeperUtils
         DO ig2=1,thisSrc%ng
           IF(igstt <= ig2 .AND. ig2 <= igstp) THEN
             IF(thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%gmin <= ig2 .AND. &
-              ig2 <= thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%gmax .AND. ig /= ig2) THEN
+              ig2 <= thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%gmax) THEN
               xss_ig2_to_ig = thisSrc%myXSMesh(ix)%xsmacsc(ig,0)%from(ig2)
               DO ir=1,thisSrc%myXSMesh(ix)%nreg
                 ireg = thisSrc%myXSMesh(ix)%ireg(ir)
