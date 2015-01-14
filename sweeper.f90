@@ -288,57 +288,46 @@ MODULE sweeper
       timeTotal = 0.0D0
 
       ! Group loop.  This is actualy in FixedSrcSolver in MPACT
+      ! Set up generic external source and fission source
       CALL source%initExtSource()
       CALL source%computeMGFS(psi)
-      DO ig=1,sweeper%ng
-        ! Set up generic external source and fission source
 
-        CALL source%updateInScatter( &
-          ig,sweeper%igstt,sweeper%igstp)
+
+      DO i=1,ninners
+        sweeper%nsweeps = sweeper%nsweeps + 1
+        DO ig=1,sweeper%ng
+          CALL source%updateInScatter(ig,sweeper%igstt,sweeper%igstp)
+          CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
+          CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
+            sweeper%phis(:,ig),sweeper%nreg,sweeper%xstrmg(:,ig),sweeper%qbarmg(:,ig),ig)
+          source%phisd(:,ig)=sweeper%phis(:,ig)
+        ENDDO !ig
+
         CALL sweeper%setExtSource(source)
-      ENDDO !ig
 
-      DO ig=1,sweeper%ng
-        ! This is the real beginning of the sweep routines in MPACT
-        IF(1 <= ig .AND. ig <= sweeper%ng) THEN
-          sweeper%activeg = ig
-          sweeper%phiang1g_in => sweeper%phiang(ig)
-          sweeper%phis1g = sweeper%phis(:,ig)
+        sweeper%phis = 0.0D0
 
-          DO i=1,ninners
-            sweeper%nsweeps = sweeper%nsweeps + 1
-            !IF(i == ninners) sweeper%sweepCur=.TRUE.
-            CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
-            CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
-              sweeper%phis1g,sweeper%nreg,sweeper%xstr,sweeper%qbar,ig)
-            sweeper%phis1gd = sweeper%phis1g
+        ! Assumes sweeper%sweepCur == .FALSE.
+        CALL CPU_TIME(timeStt)
+        CALL sweeper%sweep2D_prodquad(i)
+        CALL CPU_TIME(timeStp)
+        timeStp = timeStp - timeStt
+        timeTotal = timeTotal + timeStp
+        WRITE(*,*) 'Iteration Time: ',timeStp
+        WRITE(*,*) 'Accumulated Sweep Time: ',timeTotal
+        WRITE(*,*)
+      ENDDO !i
 
-            sweeper%phis1g = 0.0D0
-            ! Assumes sweeper%sweepCur == .FALSE.
-            CALL CPU_TIME(timeStt)
-            CALL sweeper%sweep2D_prodquad(i)
-            CALL CPU_TIME(timeStp)
-            timeStp = timeStp - timeStt
-            timeTotal = timeTotal + timeStp
-            WRITE(*,*) 'Iteration Time: ',timeStp
-            WRITE(*,*) 'Accumulated Sweep Time: ',timeTotal
-            WRITE(*,*)
-          ENDDO !i
+      ! Write to output file for comparison
+      IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
+      DO i=1,sweeper%nreg
+        WRITE(125,*) sweeper%phis(i,ig)
+      ENDDO
 
-          sweeper%phis(:,ig) = sweeper%phis1g
+      ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
+      CALL sweeper%UpdateBC%Finish()
 
-          ! Write to output file for comparison
-          IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
-          DO i=1,sweeper%nreg
-            WRITE(125,*) sweeper%phis(i,ig)
-          ENDDO
-
-          ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
-          CALL sweeper%UpdateBC%Finish()
-
-          ! hasSource = .FALSE.
-        ENDIF
-      ENDDO !ig
+      ! hasSource = .FALSE.
 
     END SUBROUTINE MOCSolver_SweepMG
 !===============================================================================
