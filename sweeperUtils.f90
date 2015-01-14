@@ -53,6 +53,7 @@ MODULE sweeperUtils
 
   TYPE,EXTENDS(SourceType) :: SourceType_P0
     DOUBLE PRECISION,POINTER :: qi1g(:) => NULL()
+    DOUBLE PRECISION,POINTER :: qimg(:,:) => NULL()
     CONTAINS
       PROCEDURE,PASS :: updateSelfScatter => updateSelfScatter_P0
       PROCEDURE,PASS :: initExtSource => initExtSource_P0
