@@ -275,6 +275,70 @@ MODULE sweeper
 
     END SUBROUTINE MOCSolver_Sweep1G
 !===============================================================================
+    SUBROUTINE MOCSolver_SweepMG(sweeper,ninners,tol,source,psi)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: ninners
+      DOUBLE PRECISION,INTENT(IN) :: tol
+      CLASS(SourceType),POINTER,INTENT(INOUT) :: source
+      DOUBLE PRECISION,INTENT(INOUT) :: psi(:)
+!       ! Local Variables
+!       INTEGER :: i,ig
+!       DOUBLE PRECISION :: timeStt,timeStp,timeTotal
+
+!       timeTotal = 0.0D0
+
+!       ! Group loop.  This is actualy in FixedSrcSolver in MPACT
+!       DO ig=1,sweeper%ng
+!         ! Set up source
+!         CALL source%initExtSource(ig)
+!         CALL source%computeMGFS(ig,psi)
+!         CALL source%updateInScatter( &
+!           ig,sweeper%igstt,sweeper%igstp)
+!         CALL sweeper%setExtSource(source)
+
+!         ! This is the real beginning of the sweep routines in MPACT
+!         IF(1 <= ig .AND. ig <= sweeper%ng) THEN
+!           sweeper%activeg = ig
+!           sweeper%phiang1g_in => sweeper%phiang(ig)
+!           sweeper%phis1g = sweeper%phis(:,ig)
+
+!           DO i=1,ninners
+!             sweeper%nsweeps = sweeper%nsweeps + 1
+!             !IF(i == ninners) sweeper%sweepCur=.TRUE.
+!             CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
+!             CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
+!               sweeper%phis1g,sweeper%nreg,sweeper%xstr,sweeper%qbar,ig)
+!             sweeper%phis1gd = sweeper%phis1g
+
+!             sweeper%phis1g = 0.0D0
+!             ! Assumes sweeper%sweepCur == .FALSE.
+!             CALL CPU_TIME(timeStt)
+!             CALL sweeper%sweep2D_prodquad(i)
+!             CALL CPU_TIME(timeStp)
+!             timeStp = timeStp - timeStt
+!             timeTotal = timeTotal + timeStp
+!             WRITE(*,*) 'Iteration Time: ',timeStp
+!             WRITE(*,*) 'Accumulated Sweep Time: ',timeTotal
+!             WRITE(*,*)
+!           ENDDO !i
+
+!           sweeper%phis(:,ig) = sweeper%phis1g
+
+!           ! Write to output file for comparison
+!           IF(ig == 1) WRITE(125,*) SHAPE(sweeper%phis)
+!           DO i=1,sweeper%nreg
+!             WRITE(125,*) sweeper%phis(i,ig)
+!           ENDDO
+
+!           ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
+!           CALL sweeper%UpdateBC%Finish()
+
+!           ! hasSource = .FALSE.
+!         ENDIF
+!       ENDDO !ig
+
+    END SUBROUTINE MOCSolver_SweepMG
+!===============================================================================
     SUBROUTINE sweep2D_prodquad_P0(sweeper,i)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: i
