@@ -41,6 +41,7 @@ MODULE sweeperUtils
     INTEGER :: nxsreg=0
     INTEGER :: ng=0
     DOUBLE PRECISION,POINTER :: phis(:,:) => NULL()
+
     DOUBLE PRECISION,POINTER :: qext(:) => NULL()
     DOUBLE PRECISION,POINTER :: split(:) => NULL()
     DOUBLE PRECISION,POINTER :: qextmg(:,:) => NULL()
