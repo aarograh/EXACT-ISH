@@ -1174,8 +1174,6 @@ MODULE openmp
         ENDDO !ig
       ENDDO !iang
 
-
-
       DO ig=1,sweeper%ng
         sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
           sweeper%qbarmg(:,ig)*wsum
