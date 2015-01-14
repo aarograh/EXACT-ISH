@@ -95,6 +95,7 @@ MODULE sweeper
       SELECTTYPE(source); TYPE IS(SourceType_P0)
         sweeper%mySrc => source
         ALLOCATE(source%qi1g(sweeper%nreg))
+        ALLOCATE(source%qimg(sweeper%nreg,sweeper%ng))
         source%qi1g = 0.0D0
         source%qext => source%qi1g
       END SELECT
@@ -102,6 +103,9 @@ MODULE sweeper
       source%nxsreg = sweeper%nxsreg
       source%ng = sweeper%ng
       source%phis => sweeper%phis
+      source%phisd => sweeper%phisd
+      !temporary set to zero for use in group inner
+      source%phisd = 0.0D0
       source%myXSMesh => sweeper%myXSMesh
       ALLOCATE(source%qextmg(source%nreg,source%ng))
       source%qextmg = 0.0D0
@@ -115,6 +119,12 @@ MODULE sweeper
       sweeper%qbar = 0.0D0
       ALLOCATE(sweeper%xstr(sweeper%nreg))
       sweeper%xstr = 0.0D0
+
+      !for use in group inner
+      ALLOCATE(sweeper%xstrmg(sweeper%nreg,sweeper%ng))
+      sweeper%xstrmg = 0.0D0
+      ALLOCATE(sweeper%qbarmg(sweeper%nreg,sweeper%ng))
+      sweeper%qbarmg = 0.0D0
 
       ! Set up expoa and expob for exponential inlining
       IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &
@@ -133,7 +143,7 @@ MODULE sweeper
         expob=TRANSPOSE(sweeper%expTableDat%table3D(2,:,:))
       ENDIF
 
-      sweeper%sweep => MOCSolver_Sweep1G
+      sweeper%sweep => MOCSolver_SweepMG
       sweeper%setExtSource => setExtSource_MOCP0
 
     END SUBROUTINE initializeSweeper
