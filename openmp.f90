@@ -1043,6 +1043,7 @@ MODULE openmp
     ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol3_3
 !===============================================================================
     !This version for the group inner design
+    !from higher to lower level: iang, ilray, ig, ipol, iseg
     SUBROUTINE sweep2D_prodquad_P0_GI1(sweeper,i)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: i
@@ -1184,7 +1185,8 @@ MODULE openmp
 
     ENDSUBROUTINE sweep2D_prodquad_P0_GI1
 !===============================================================================
-    !This version is the same as the base sweeper
+    !This one uses group inner
+    !From higher level to lower: iang, ilray, iseg, ig, ipol
     SUBROUTINE sweep2D_prodquad_P0_GI2(sweeper,i)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: i
