@@ -313,7 +313,6 @@ MODULE sweeper
       CALL source%initExtSource()
       CALL source%computeMGFS(psi)
 
-
       DO i=1,ninners
         sweeper%nsweeps = sweeper%nsweeps + 1
         DO ig=1,sweeper%ng

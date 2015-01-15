@@ -21,9 +21,9 @@ MODULE openmp
   !With OpenMP
   PUBLIC :: sweep2D_prodquad_P0_vectoripol3_3
   !group inner
-  PUBLIC :: sweep2D_prodquad_P0_vectoripol4
+  PUBLIC :: sweep2D_prodquad_P0_GI1
   !group innermost
-  PUBLIC :: sweep2D_prodquad_P0_vectoripol5
+  PUBLIC :: sweep2D_prodquad_P0_GI2
 
 
   CONTAINS
@@ -1042,8 +1042,8 @@ MODULE openmp
       DEALLOCATE(tphi)
     ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol3_3
 !===============================================================================
-    !This version is the same as the base sweeper
-    SUBROUTINE sweep2D_prodquad_P0_vectoripol4(sweeper,i)
+    !This version for the group inner design
+    SUBROUTINE sweep2D_prodquad_P0_GI1(sweeper,i)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: i
       ! Local Variables
@@ -1182,10 +1182,10 @@ MODULE openmp
           sweeper%qbarmg(:,ig)*wsum
       ENDDO !ig
 
-    ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol4
+    ENDSUBROUTINE sweep2D_prodquad_P0_GI1
 !===============================================================================
     !This version is the same as the base sweeper
-    SUBROUTINE sweep2D_prodquad_P0_vectoripol5(sweeper,i)
+    SUBROUTINE sweep2D_prodquad_P0_GI2(sweeper,i)
       CLASS(sweeperType),INTENT(INOUT) :: sweeper
       INTEGER,INTENT(IN) :: i
       ! Local Variables
@@ -1319,5 +1319,5 @@ MODULE openmp
           sweeper%qbarmg(:,ig)*wsum
       ENDDO !ig
 
-    ENDSUBROUTINE sweep2D_prodquad_P0_vectoripol5
+    ENDSUBROUTINE sweep2D_prodquad_P0_GI2
 ENDMODULE openmp
