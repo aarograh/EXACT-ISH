@@ -1195,14 +1195,17 @@ MODULE openmp
       INTEGER :: ifrstreg_proc,ireg1,ireg2
       DOUBLE PRECISION :: phid1,phid2,wsum,rpol
       DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
+!       DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
       DOUBLE PRECISION :: hseg(sweeper%maxsegray)
-      DOUBLE PRECISION :: &
-        exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
-      DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
+!       DOUBLE PRECISION :: &
+!         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
+!       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
       TYPE(LongRayType_Base) :: ilongRay
+      DOUBLE PRECISION,ALLOCATABLE :: phis(:,:)
+      DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
+      DOUBLE PRECISION :: exparg1,exparg2
 
       INTEGER :: ig
 
@@ -1211,8 +1214,9 @@ MODULE openmp
       wsum = 4.0D0*PI
       ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
 
-      ALLOCATE(phibar(sweeper%nreg))
-      tphi(:,ithd) = 0.0D0
+      ALLOCATE(phio1(1:npol,1:sweeper%ng))
+      ALLOCATE(phio2(1:npol,1:sweeper%ng))
+      ALLOCATE(phis(sweeper%nreg,sweeper%ng))
 
       DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
         wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
@@ -1222,7 +1226,7 @@ MODULE openmp
             sweeper%modRayDat%angquad%sinpolang(ipol)
         ENDDO !ipol
 
-        phibar = 0.0D0
+        phis = 0.0D0
 
         DO ilray=1,sweeper%longRayDat%nlongrays(iang)
           ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
@@ -1255,69 +1259,60 @@ MODULE openmp
 
           nseglray = iseg
 
-!           DO ipol=1,npol
-!             rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-!             DO iseg=1,nseglray
-!               exparg(iseg,ipol) = sweeper%expTableDat%EXPT(tau_seg(iseg)*rpol)
-!             ENDDO !iseg
-!           ENDDO !ipol
-
+          iseg2=nseglray+1
           DO ig=1,sweeper%ng
-
-            sweeper%xstr => sweeper%xstrmg(:,ig)
-            sweeper%qbar => sweeper%qbarmg(:,ig)
-            sweeper%activeg=ig
-
             DO ipol=1,npol
-              rpol = sweeper%modRayDat%angquad%rsinpolang(ipol)
-              DO iseg=1,nseglray
-                ireg=irg_seg(iseg)
-                exparg(iseg,ipol) = sweeper%expTableDat%EXPT(-sweeper%xstr(ireg)*hseg(iseg)*rpol)
-              ENDDO !iseg
+              phio1(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
             ENDDO !ipol
+          ENDDO !ig
 
+          DO iseg1=1,nseglray
+            ireg1=irg_seg(iseg1)
+            iseg2=iseg2-1
+            ireg2=irg_seg(iseg2)
+            DO ig=1,sweeper%ng
+              DO ipol=1,npol
+                rpol=sweeper%modRayDat%angquad%rsinpolang(ipol)
+                exparg1=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*rpol)
+                exparg2=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*rpol)
+                !forward direction
+                phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
+                phid1=phid1*exparg1
+                phio1(ipol,ig)=phio1(ipol,ig)-phid1
+                phis(ireg1,ig)=phis(ireg1,ig)+phid1*wtang(ipol)
+                !backward direction
+                phid2=phio2(ipol,ig)-sweeper%qbarmg(ireg2,ig)
+                phid2=phid2*exparg2
+                phio2(ipol,ig)=phio2(ipol,ig)-phid2
+                phis(ireg2,ig)=phis(ireg2,ig)+phid2*wtang(ipol)
+              ENDDO !ipol
+            ENDDO !ig
+          ENDDO !iseg
+
+          !The following part could be avoided if we could change the
+          !interface of sweeper%UpdateBC%Start(iang,
+          !                         outgoing%angle(iang)%face(iface)%angflux,
+          !                         incoming%angle(irefl)%face(iface)%angflux)
+          DO ig=1,sweeper%ng
             DO ipol=1,npol
-              phio1(0) = &
-                sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
-              phio2(nseglray+1) = &
-                sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
-              iseg2 = nseglray + 1
-
-              DO iseg1=1,nseglray
-                iseg2 = iseg2 - 1
-
-                ireg1 = irg_seg(iseg1)
-                phid1 = phio1(iseg1-1) - sweeper%qbarmg(ireg1,ig)
-                phid1 = phid1*exparg(iseg1,ipol)
-                !phio1 stores the outgoing angular flux to be used for the next
-                !segment as incoming angular flux.
-                phio1(iseg1) = phio1(iseg1-1) - phid1
-                sweeper%phis(ireg1,ig) = sweeper%phis(ireg1,ig) + phid1*wtang(ipol)
-
-                ireg2 = irg_seg(iseg2)
-                phid2 = phio2(iseg2+1) - sweeper%qbarmg(ireg2,ig)
-                phid2 = phid2*exparg(iseg2,ipol)
-                !phio1 stores the outgoing angular flux to be used for the next
-                !segment as incoming angular flux.
-                phio2(iseg2) = phio2(iseg2+1) - phid2
-                sweeper%phis(ireg2,ig) = sweeper%phis(ireg2,ig) + phid2*wtang(ipol)
-              ENDDO !iseg
-
               sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
-                phio2(1)
+                phio2(ipol,ig)
               sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
-                phio1(nseglray)
+                phio1(ipol,ig)
             ENDDO !ipol
           ENDDO !ig
         ENDDO !ilray
 
-        !This is to sum over the angles owned by the current proc.
-        !MPACT says it's for polar angles, which I think is not true.
-!         tphi(:,ithd) = tphi(:,ithd) + phibar
         DO ig=1,sweeper%ng
           CALL sweeper%UpdateBC%Start(iang,sweeper%phiangmg_out(ig),sweeper%phiang(ig))
         ENDDO !ig
       ENDDO !iang
+
+      sweeper%phis=phis
+      DEALLOCATE(phis)
+      DEALLOCATE(phio1)
+      DEALLOCATE(phio2)
 
       DO ig=1,sweeper%ng
         sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
