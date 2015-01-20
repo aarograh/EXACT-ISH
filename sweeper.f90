@@ -317,7 +317,7 @@ MODULE sweeper
         sweeper%nsweeps = sweeper%nsweeps + 1
         DO ig=1,sweeper%ng
           CALL source%updateInScatter(ig,sweeper%igstt,sweeper%igstp)
-          CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis1g)
+          CALL sweeper%mySrc%updateSelfScatter(ig,sweeper%qbar,sweeper%phis(:,ig))
           CALL MOCSolver_Setup1GFSP(sweeper%myXSMesh,sweeper%nxsreg, &
             sweeper%phis(:,ig),sweeper%nreg,sweeper%xstrmg(:,ig),sweeper%qbarmg(:,ig),ig)
           source%phisd(:,ig)=sweeper%phis(:,ig)
