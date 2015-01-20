@@ -253,7 +253,7 @@ MODULE sweeper
           ENDDO
 
           ! Update boundary surface flux here, if sweep Cur and associated coarse mesh
-          CALL sweeper%UpdateBC%Finish()
+!           CALL sweeper%UpdateBC%Finish()
 
           ! hasSource = .FALSE.
         ENDIF
