@@ -1219,6 +1219,7 @@ MODULE openmp
       ALLOCATE(phio1(1:npol,1:sweeper%ng))
       ALLOCATE(phio2(1:npol,1:sweeper%ng))
       ALLOCATE(phis(sweeper%nreg,sweeper%ng))
+      phis = 0.0D0
 
       DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
         wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
@@ -1227,8 +1228,6 @@ MODULE openmp
           wtang(ipol) = wtangazi*sweeper%modRayDat%angquad%wtheta(ipol)* &
             sweeper%modRayDat%angquad%sinpolang(ipol)
         ENDDO !ipol
-
-        phis = 0.0D0
 
         DO ilray=1,sweeper%longRayDat%nlongrays(iang)
           ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
