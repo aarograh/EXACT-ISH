@@ -1338,7 +1338,7 @@ MODULE openmp
       DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
 !       DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
       DOUBLE PRECISION :: tphi(sweeper%nreg,1)
-      DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
+!       DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
       DOUBLE PRECISION :: hseg(sweeper%maxsegray)
 !       DOUBLE PRECISION :: &
 !         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
