@@ -24,6 +24,8 @@ MODULE openmp
   PUBLIC :: sweep2D_prodquad_P0_GI1
   !group innermost
   PUBLIC :: sweep2D_prodquad_P0_GI2
+  !group innermost and avoid duplicated evaluation of the exparg
+  PUBLIC :: sweep2D_prodquad_P0_GI3
 
 
   CONTAINS
@@ -1321,4 +1323,141 @@ MODULE openmp
       ENDDO !ig
 
     ENDSUBROUTINE sweep2D_prodquad_P0_GI2
+!===============================================================================
+    !This one uses group inner
+    !From higher level to lower: iang, ilray, iseg, ig, ipol
+    SUBROUTINE sweep2D_prodquad_P0_GI3(sweeper,i)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: i
+      ! Local Variables
+      INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf,ifrstreg
+      INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
+      INTEGER :: irg_seg(0:sweeper%maxsegray),ithd
+      INTEGER :: ifrstreg_proc,ireg1,ireg2
+      DOUBLE PRECISION :: phid1,phid2,wsum,rpol
+      DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
+!       DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
+      DOUBLE PRECISION :: tphi(sweeper%nreg,1)
+      DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
+      DOUBLE PRECISION :: hseg(sweeper%maxsegray)
+!       DOUBLE PRECISION :: &
+!         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
+!       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
+      TYPE(LongRayType_Base) :: ilongRay
+      DOUBLE PRECISION,ALLOCATABLE :: phis(:,:)
+      DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
+      DOUBLE PRECISION :: exparg1,exparg2
+
+      INTEGER :: ig
+
+      ithd = 1
+      npol = SIZE(sweeper%modRayDat%angquad%wtheta)
+      wsum = 4.0D0*PI
+      ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
+
+      ALLOCATE(phio1(1:npol,1:sweeper%ng))
+      ALLOCATE(phio2(1:npol,1:sweeper%ng))
+      ALLOCATE(phis(sweeper%nreg,sweeper%ng))
+      phis = 0.0D0
+
+      DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
+        wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
+          sweeper%modRayDat%angquad%walpha(iang)*PI
+        DO ipol=1,npol
+          wtang(ipol) = wtangazi*sweeper%modRayDat%angquad%wtheta(ipol)* &
+            sweeper%modRayDat%angquad%sinpolang(ipol)
+        ENDDO !ipol
+
+        DO ilray=1,sweeper%longRayDat%nlongrays(iang)
+          ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
+          im = ilongRay%ifirstModMesh
+          iside = ilongRay%iside(1)
+          imray = ilongRay%firstModRay
+          ibc1 = ilongRay%BCIndex(1)
+          ibc2 = ilongRay%BCIndex(2)
+          is1 = ilongRay%iside(1)
+          is2 = ilongRay%iside(2)
+          iseg = 0
+
+          DO imod=1,ilongRay%nmods
+            ifrstreg = sweeper%myModMesh%ifrstfsreg(im)
+
+            DO imseg=1,sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%nseg
+              ireg = ifrstreg - ifrstreg_proc + &
+                sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%ireg(imseg)
+              iseg = iseg + 1
+!               tau_seg(iseg) = -sweeper%xstr(ireg)* &
+!                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              irg_seg(iseg) = ireg
+            ENDDO !imseg
+
+            inextsurf = sweeper%modRayDat%angles(iang)%rays(imray)%nextsurf(1)
+            imray = sweeper%modRayDat%angles(iang)%rays(imray)%nextray(1)
+            im = sweeper%myModMesh%neigh(inextsurf,im)
+          ENDDO !imod
+
+          nseglray = iseg
+
+          iseg2=nseglray+1
+          DO ig=1,sweeper%ng
+            DO ipol=1,npol
+              phio1(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+            ENDDO !ipol
+          ENDDO !ig
+
+          DO iseg1=1,nseglray
+            ireg1=irg_seg(iseg1)
+            iseg2=iseg2-1
+            ireg2=irg_seg(iseg2)
+            DO ig=1,sweeper%ng
+              DO ipol=1,npol
+                rpol=sweeper%modRayDat%angquad%rsinpolang(ipol)
+                exparg1=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*rpol)
+                exparg2=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*rpol)
+                !forward direction
+                phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
+                phid1=phid1*exparg1
+                phio1(ipol,ig)=phio1(ipol,ig)-phid1
+                phis(ireg1,ig)=phis(ireg1,ig)+phid1*wtang(ipol)
+                !backward direction
+                phid2=phio2(ipol,ig)-sweeper%qbarmg(ireg2,ig)
+                phid2=phid2*exparg2
+                phio2(ipol,ig)=phio2(ipol,ig)-phid2
+                phis(ireg2,ig)=phis(ireg2,ig)+phid2*wtang(ipol)
+              ENDDO !ipol
+            ENDDO !ig
+          ENDDO !iseg
+
+          !The following part could be avoided if we could change the
+          !interface of sweeper%UpdateBC%Start(iang,
+          !                         outgoing%angle(iang)%face(iface)%angflux,
+          !                         incoming%angle(irefl)%face(iface)%angflux)
+          DO ig=1,sweeper%ng
+            DO ipol=1,npol
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
+                phio2(ipol,ig)
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
+                phio1(ipol,ig)
+            ENDDO !ipol
+          ENDDO !ig
+        ENDDO !ilray
+
+        DO ig=1,sweeper%ng
+          CALL sweeper%UpdateBC%Start(iang,sweeper%phiangmg_out(ig),sweeper%phiang(ig))
+        ENDDO !ig
+      ENDDO !iang
+
+      sweeper%phis=phis
+      DEALLOCATE(phis)
+      DEALLOCATE(phio1)
+      DEALLOCATE(phio2)
+
+      DO ig=1,sweeper%ng
+        sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
+          sweeper%qbarmg(:,ig)*wsum
+      ENDDO !ig
+
+    ENDSUBROUTINE sweep2D_prodquad_P0_GI3
 ENDMODULE openmp
