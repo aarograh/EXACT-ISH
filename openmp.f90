@@ -1210,8 +1210,13 @@ MODULE openmp
       DOUBLE PRECISION,ALLOCATABLE :: phis(:,:)
       DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
       DOUBLE PRECISION :: exparg1,exparg2
+      DOUBLE PRECISION :: stt1,stp1,tot1,stt2,stp2,tot2,stt3,stp3,tot3
 
       INTEGER :: ig
+
+      tot1=0.0D0
+      tot2=0.0D0
+      tot3=0.0D0
 
       ithd = 1
       npol = SIZE(sweeper%modRayDat%angquad%wtheta)
@@ -1242,6 +1247,7 @@ MODULE openmp
           is2 = ilongRay%iside(2)
           iseg = 0
 
+          CALL CPU_TIME(stt1)
           DO imod=1,ilongRay%nmods
             ifrstreg = sweeper%myModMesh%ifrstfsreg(im)
 
@@ -1259,6 +1265,8 @@ MODULE openmp
             imray = sweeper%modRayDat%angles(iang)%rays(imray)%nextray(1)
             im = sweeper%myModMesh%neigh(inextsurf,im)
           ENDDO !imod
+          CALL CPU_TIME(stp1)
+          tot1=tot1+stp1-stt1
 
           nseglray = iseg
 
@@ -1270,6 +1278,7 @@ MODULE openmp
             ENDDO !ipol
           ENDDO !ig
 
+          CALL CPU_TIME(stt2)
           DO iseg1=1,nseglray
             ireg1=irg_seg(iseg1)
             iseg2=iseg2-1
@@ -1292,11 +1301,13 @@ MODULE openmp
               ENDDO !ipol
             ENDDO !ig
           ENDDO !iseg
-
+          CALL CPU_TIME(stp2)
+          tot2=tot2+stp2-stt2
           !The following part could be avoided if we could change the
           !interface of sweeper%UpdateBC%Start(iang,
           !                         outgoing%angle(iang)%face(iface)%angflux,
           !                         incoming%angle(irefl)%face(iface)%angflux)
+          CALL CPU_TIME(stt3)
           DO ig=1,sweeper%ng
             DO ipol=1,npol
               sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
@@ -1305,6 +1316,8 @@ MODULE openmp
                 phio1(ipol,ig)
             ENDDO !ipol
           ENDDO !ig
+          CALL CPU_TIME(stp3)
+          tot3=tot3+stp3-stt3
         ENDDO !ilray
 
         DO ig=1,sweeper%ng
@@ -1321,6 +1334,12 @@ MODULE openmp
         sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
           sweeper%qbarmg(:,ig)*wsum
       ENDDO !ig
+
+PRINT*,"==============="
+PRINT*,tot1
+PRINT*,tot2
+PRINT*,tot3
+
 
     ENDSUBROUTINE sweep2D_prodquad_P0_GI2
 !===============================================================================
