@@ -1286,12 +1286,9 @@ MODULE openmp
             ireg2=irg_seg(iseg2)
             DO ig=1,sweeper%ng
               DO ipol=1,npol
-!                 CALL CPU_TIME(stt2)
                 rpol=sweeper%modRayDat%angquad%rsinpolang(ipol)
                 exparg1=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*rpol)
                 exparg2=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*rpol)
-!                 CALL CPU_TIME(stp2)
-!                 tot2=tot2+stp2-stt2
 
                 !forward direction
                 phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
