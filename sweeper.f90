@@ -339,10 +339,11 @@ MODULE sweeper
       ENDDO !i
 
       ! Write to output file for comparison
-      WRITE(125,*) SHAPE(sweeper%phis)
+      WRITE(125) SIZE(sweeper%phis,1)
+      WRITE(125) SIZE(sweeper%phis,2)
       DO ig=1,sweeper%ng
         DO i=1,sweeper%nreg
-          WRITE(125,*) sweeper%phis(i,ig)
+          WRITE(125) sweeper%phis(i,ig)
         ENDDO
       ENDDO
 

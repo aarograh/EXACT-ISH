@@ -24,7 +24,7 @@ MODULE openmp
   PUBLIC :: sweep2D_prodquad_P0_GI1
   !group innermost
   PUBLIC :: sweep2D_prodquad_P0_GI2
-  !group innermost and avoid duplicated evaluation of the exparg
+  !group innermost and inline exponential interpolation
   PUBLIC :: sweep2D_prodquad_P0_GI3
 
 
@@ -1376,8 +1376,9 @@ PRINT*,tot4
       DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
       DOUBLE PRECISION :: exparg1=0.0D0,exparg2=0.0D0
       DOUBLE PRECISION :: stt1,stp1,tot1,stt2,stp2,tot2,stt3,stp3,tot3,stt4,stp4,tot4
-
       INTEGER :: ig
+      DOUBLE PRECISION :: xval1,xval2
+      INTEGER :: ix1,ix2
 
       tot1=0.0D0
       tot2=0.0D0
@@ -1451,9 +1452,14 @@ PRINT*,tot4
             ireg2=irg_seg(iseg2)
             DO ig=1,sweeper%ng
               DO ipol=1,npol
-                rpol=sweeper%modRayDat%angquad%rsinpolang(ipol)
-                exparg1=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*rpol)
-                exparg2=sweeper%expTableDat%EXPT(-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*rpol)
+                xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*1000.0D0
+                ix1=xval1
+                ix1=MAX(ix1,-16000)
+                exparg1=expoa(ipol,ix1)*xval1+expob(ipol,ix1)
+                xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*1000.0D0
+                ix2=xval2
+                ix2=MAX(ix2,-16000)
+                exparg1=expoa(ipol,ix2)*xval2+expob(ipol,ix2)
 
                 !forward direction
                 phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)

@@ -40,7 +40,8 @@ MODULE IO
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.sol',UNIT=solFileUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
-      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.out',UNIT=outFileUnitNo)
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.out',UNIT=outFileUnitNo, &
+        FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
 
       IF(COMMAND_ARGUMENT_COUNT() == 2) THEN
         arg_in = ''
