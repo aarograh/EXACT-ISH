@@ -38,7 +38,7 @@ MODULE IO
       CALL GET_COMMAND_ARGUMENT(1,arg_in)
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.dump',UNIT=inpFileUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
-      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.sol',UNIT=solFileUnitNo, &
+      OPEN(FILE=TRIM(ADJUSTL(arg_in))//'_table3D.sol',UNIT=solFileUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
       OPEN(FILE=TRIM(ADJUSTL(arg_in))//'.out',UNIT=outFileUnitNo, &
         FORM='UNFORMATTED',ACCESS='SEQUENTIAL',STATUS='OLD')
