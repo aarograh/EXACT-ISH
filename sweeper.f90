@@ -9,9 +9,11 @@ MODULE sweeper
   PUBLIC :: sweeperType
   PUBLIC :: sweep2D_prodquad_P0
   PUBLIC :: expoa,expob
+  PUBLIC :: expoab
 
   !For polar angle dependent exponential table inlining.
   DOUBLE PRECISION,ALLOCATABLE,SAVE :: expoa(:,:),expob(:,:)
+  DOUBLE PRECISION,ALLOCATABLE,SAVE :: expoab(:)
 
   TYPE :: sweeperType
     LOGICAL :: hasSource=.FALSE.
@@ -92,7 +94,7 @@ MODULE sweeper
       CLASS(sourceType),POINTER,INTENT(INOUT) :: source
 
       ! Local Variables
-      INTEGER :: ig,iang,iface,i1,i2,i3,i4
+      INTEGER :: ig,iang,iface,i1,i2,i3,i4,i5
 
       ! Set up source
       ALLOCATE(SourceType_P0 :: source)
@@ -147,21 +149,31 @@ MODULE sweeper
         ENDDO !iang
       ENDDO !ig
 
-      ! Set up expoa and expob for exponential inlining
+      ! Set up expoa and expob and expoab in case of table1D for exponential inlining
       IF(ALLOCATED(sweeper%expTableDat%table3D) .AND. .NOT.ALLOCATED(expoa) .AND. &
-         .NOT.ALLOCATED(expob)) THEN
+         .NOT.ALLOCATED(expob) .AND. .NOT.ALLOCATED(expoab)) THEN
         ALLOCATE(expoa(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
           LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
         ALLOCATE(expob(1:SIZE(sweeper%expTableDat%table3D,DIM=3), &
           LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2)))
 
-!           ALLOCATE(expoa(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
-!             SIZE(sweeper%expTableDat%table3D,DIM=3)))
-!           ALLOCATE(expob(LBOUND(sweeper%expTableDat%table3D,DIM=2):UBOUND(sweeper%expTableDat%table3D,DIM=2), &
-!             SIZE(sweeper%expTableDat%table3D,DIM=3)))
+        i4=SIZE(expoa,DIM=2)
+        i5=SIZE(expoa,DIM=1)
+        i3=-i4*i5*2
+
+        ALLOCATE(expoab(i3+1:0))
 
         expoa=TRANSPOSE(sweeper%expTableDat%table3D(1,:,:))*0.001D0
-        expob=TRANSPOSE(sweeper%expTableDat%table3D(2,:,:))
+        expob=TRANSPOSE(sweeper%expTableDat%table3D(2,:,:)) !expoa(ipol,ix1)
+
+        DO i1=-LBOUND(expoa,DIM=2),0
+          DO i2=1,SIZE(expoa,DIM=1)
+            i3=i3+1
+            expoab(i3)=expoa(i2,i1)
+            i3=i3+1
+            expoab(i3)=expob(i2,i1)
+          ENDDO
+        ENDDO
       ENDIF
 
       sweeper%sweep => MOCSolver_SweepMG
