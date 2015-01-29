@@ -26,6 +26,9 @@ MODULE openmp
   PUBLIC :: sweep2D_prodquad_P0_GI2
   !group innermost and inline exponential interpolation
   PUBLIC :: sweep2D_prodquad_P0_GI3
+  !group innermost and inline exponential interpolation and table1D
+  PUBLIC :: sweep2D_prodquad_P0_GI_table1D
+
 
 
   CONTAINS
@@ -1520,6 +1523,174 @@ PRINT*,tot2
 PRINT*,tot3
 PRINT*,tot4
 
-
     ENDSUBROUTINE sweep2D_prodquad_P0_GI3
+!===============================================================================
+    !This one uses group inner
+    !From higher level to lower: iang, ilray, iseg, ig, ipol
+    !This version uses table1D to test cache hit ratio
+    SUBROUTINE sweep2D_prodquad_P0_GI_table1D(sweeper,i)
+      CLASS(sweeperType),INTENT(INOUT) :: sweeper
+      INTEGER,INTENT(IN) :: i
+      ! Local Variables
+      INTEGER :: iang,ipol,ilray,imray,imod,im,iside,inextsurf,ifrstreg
+      INTEGER :: imseg,iseg,iseg1,iseg2,ibc1,ibc2,nseglray,is1,is2,npol,ireg
+      INTEGER :: irg_seg(0:sweeper%maxsegray),ithd
+      INTEGER :: ifrstreg_proc,ireg1,ireg2
+      DOUBLE PRECISION :: phid1,phid2,wsum,rpol
+      DOUBLE PRECISION :: wtangazi,wtang(SIZE(sweeper%modRayDat%angquad%wtheta))
+!       DOUBLE PRECISION :: phio1(0:sweeper%maxsegray),phio2(1:sweeper%maxsegray+1)
+      DOUBLE PRECISION :: tphi(sweeper%nreg,1)
+      DOUBLE PRECISION :: tau_seg(sweeper%maxsegray)
+      DOUBLE PRECISION :: hseg(sweeper%maxsegray)
+!       DOUBLE PRECISION :: &
+!         exparg(sweeper%maxsegray,SIZE(sweeper%modRayDat%angquad%wtheta))
+!       DOUBLE PRECISION,ALLOCATABLE :: phibar(:)
+      TYPE(LongRayType_Base) :: ilongRay
+      DOUBLE PRECISION,ALLOCATABLE :: phis(:,:)
+      DOUBLE PRECISION,ALLOCATABLE :: phio1(:,:),phio2(:,:)
+      DOUBLE PRECISION :: exparg1=0.0D0,exparg2=0.0D0
+      DOUBLE PRECISION :: stt1,stp1,tot1,stt2,stp2,tot2,stt3,stp3,tot3,stt4,stp4,tot4
+      INTEGER :: ig
+      DOUBLE PRECISION :: xval1,xval2
+      INTEGER :: ix1,ix2
+
+      tot1=0.0D0
+      tot2=0.0D0
+      tot3=0.0D0
+      tot4=0.0D0
+
+      ithd = 1
+      npol = SIZE(sweeper%modRayDat%angquad%wtheta)
+      wsum = 4.0D0*PI
+      ifrstreg_proc = sweeper%myModMesh%ifrstfsreg(sweeper%imeshstt)
+
+      ALLOCATE(phio1(1:npol,1:sweeper%ng))
+      ALLOCATE(phio2(1:npol,1:sweeper%ng))
+      ALLOCATE(phis(sweeper%nreg,sweeper%ng))
+      phis = 0.0D0
+
+      DO iang=sweeper%modRayDat%iangstt,sweeper%modRayDat%iangstp
+        wtangazi = sweeper%modRayDat%angles(iang)%dlr* &
+          sweeper%modRayDat%angquad%walpha(iang)*PI
+        DO ipol=1,npol
+          wtang(ipol) = wtangazi*sweeper%modRayDat%angquad%wtheta(ipol)* &
+            sweeper%modRayDat%angquad%sinpolang(ipol)
+        ENDDO !ipol
+
+        DO ilray=1,sweeper%longRayDat%nlongrays(iang)
+          ilongRay = sweeper%longRayDat%angles(iang)%longrays(ilray)
+          im = ilongRay%ifirstModMesh
+          iside = ilongRay%iside(1)
+          imray = ilongRay%firstModRay
+          ibc1 = ilongRay%BCIndex(1)
+          ibc2 = ilongRay%BCIndex(2)
+          is1 = ilongRay%iside(1)
+          is2 = ilongRay%iside(2)
+          iseg = 0
+
+          CALL CPU_TIME(stt1)
+          DO imod=1,ilongRay%nmods
+            ifrstreg = sweeper%myModMesh%ifrstfsreg(im)
+
+            DO imseg=1,sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%nseg
+              ireg = ifrstreg - ifrstreg_proc + &
+                sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%ireg(imseg)
+              iseg = iseg + 1
+!               tau_seg(iseg) = -sweeper%xstr(ireg)* &
+!                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              irg_seg(iseg) = ireg
+            ENDDO !imseg
+
+            inextsurf = sweeper%modRayDat%angles(iang)%rays(imray)%nextsurf(1)
+            imray = sweeper%modRayDat%angles(iang)%rays(imray)%nextray(1)
+            im = sweeper%myModMesh%neigh(inextsurf,im)
+          ENDDO !imod
+          CALL CPU_TIME(stp1)
+          tot1=tot1+stp1-stt1
+
+          nseglray = iseg
+
+          iseg2=nseglray+1
+          DO ig=1,sweeper%ng
+            DO ipol=1,npol
+              phio1(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1)
+              phio2(ipol,ig)=sweeper%phiang(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2)
+            ENDDO !ipol
+          ENDDO !ig
+
+          CALL CPU_TIME(stt2)
+          DO iseg1=1,nseglray
+            ireg1=irg_seg(iseg1)
+            iseg2=iseg2-1
+            ireg2=irg_seg(iseg2)
+            DO ig=1,sweeper%ng
+              DO ipol=1,npol
+                xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*1000.0D0
+                ix1=xval1
+                ix1=MAX(ix1,-16000)
+                exparg1=expoa(ipol,ix1)*xval1+expob(ipol,ix1)
+                xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*1000.0D0
+                ix2=xval2
+                ix2=MAX(ix2,-16000)
+                exparg1=expoa(ipol,ix2)*xval2+expob(ipol,ix2)
+
+                !forward direction
+                phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
+                phid1=phid1*exparg1
+                phio1(ipol,ig)=phio1(ipol,ig)-phid1
+                phis(ireg1,ig)=phis(ireg1,ig)+phid1*wtang(ipol)
+                !backward direction
+                phid2=phio2(ipol,ig)-sweeper%qbarmg(ireg2,ig)
+                phid2=phid2*exparg2
+                phio2(ipol,ig)=phio2(ipol,ig)-phid2
+                phis(ireg2,ig)=phis(ireg2,ig)+phid2*wtang(ipol)
+              ENDDO !ipol
+            ENDDO !ig
+          ENDDO !iseg
+
+          CALL CPU_TIME(stp2)
+          tot2=tot2+stp2-stt2
+
+          CALL CPU_TIME(stt3)
+          DO ig=1,sweeper%ng
+            DO ipol=1,npol
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is1)%angflux(ipol,ibc1) = &
+                phio2(ipol,ig)
+              sweeper%phiangmg_out(ig)%angle(iang)%face(is2)%angflux(ipol,ibc2) = &
+                phio1(ipol,ig)
+            ENDDO !ipol
+          ENDDO !ig
+          CALL CPU_TIME(stp3)
+          tot3=tot3+stp3-stt3
+        ENDDO !ilray
+
+        CALL CPU_TIME(stt4)
+        DO ig=1,sweeper%ng
+          CALL sweeper%UpdateBC%Start(iang,sweeper%phiangmg_out(ig),sweeper%phiang(ig))
+        ENDDO !ig
+        CALL CPU_TIME(stp4)
+        tot4=tot4+stp4-stt4
+
+      ENDDO !iang
+
+      sweeper%phis=phis
+      DEALLOCATE(phis)
+      DEALLOCATE(phio1)
+      DEALLOCATE(phio2)
+
+      DO ig=1,sweeper%ng
+        sweeper%phis(:,ig) = sweeper%phis(:,ig)/(sweeper%xstrmg(:,ig)*sweeper%vol/sweeper%pz) + &
+          sweeper%qbarmg(:,ig)*wsum
+      ENDDO !ig
+
+PRINT*,"***********"
+PRINT*,tot1
+PRINT*,tot2
+PRINT*,tot3
+PRINT*,tot4
+
+    ENDSUBROUTINE sweep2D_prodquad_P0_GI_table1D
+
+
 ENDMODULE openmp
