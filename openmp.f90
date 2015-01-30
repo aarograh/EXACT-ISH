@@ -1598,7 +1598,7 @@ PRINT*,tot4
               iseg = iseg + 1
 !               tau_seg(iseg) = -sweeper%xstr(ireg)* &
 !                 sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
-              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)
+              hseg(iseg)=sweeper%rtmesh(im)%rtdat%angles(iang)%rays(imray)%hseg(imseg)*1000.0D0
               irg_seg(iseg) = ireg
             ENDDO !imseg
 
@@ -1626,12 +1626,12 @@ PRINT*,tot4
             ireg2=irg_seg(iseg2)
             DO ig=1,sweeper%ng
               DO ipol=1,npol
-                xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)*1000.0D0
+                xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)
                 ix1=xval1
                 ix1=MAX(ix1,-16000)
 !                 exparg1=expoa(ipol,ix1)*xval1+expob(ipol,ix1)
                 exparg1=expoab(ix1*8+2*ipol-9)*xval1+expoab(ix1*8+2*ipol-8)
-                xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)*1000.0D0
+                xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)
                 ix2=xval2
                 ix2=MAX(ix2,-16000)
 !                 exparg1=expoa(ipol,ix2)*xval2+expob(ipol,ix2)
