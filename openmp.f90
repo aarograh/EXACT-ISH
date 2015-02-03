@@ -1629,13 +1629,11 @@ PRINT*,tot4
                 xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)
                 ix1=xval1
                 ix1=MAX(ix1,-16000)
-!                 exparg1=expoa(ipol,ix1)*xval1+expob(ipol,ix1)
                 exparg1=expoab(ix1*8+2*ipol-9)*xval1+expoab(ix1*8+2*ipol-8)
                 xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)
                 ix2=xval2
                 ix2=MAX(ix2,-16000)
-!                 exparg1=expoa(ipol,ix2)*xval2+expob(ipol,ix2)
-                exparg1=expoab(ix2*8+2*ipol-9)*xval2+expoab(ix2*8+2*ipol-8)
+                exparg2=expoab(ix2*8+2*ipol-9)*xval2+expoab(ix2*8+2*ipol-8)
 
                 !forward direction
                 phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
