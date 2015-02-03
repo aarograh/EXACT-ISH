@@ -1552,7 +1552,7 @@ PRINT*,tot4
       DOUBLE PRECISION :: stt1,stp1,tot1,stt2,stp2,tot2,stt3,stp3,tot3,stt4,stp4,tot4
       INTEGER :: ig
       DOUBLE PRECISION :: xval1,xval2
-      INTEGER :: ix1,ix2
+      INTEGER :: ix1,ix2,index1,index2
 
       tot1=0.0D0
       tot2=0.0D0
@@ -1628,12 +1628,17 @@ PRINT*,tot4
               xval1=-sweeper%xstrmg(ireg1,ig)*hseg(iseg1)
               ix1=xval1
               ix1=MAX(ix1,-16000)
+              index1=ix1*8-7
+
               xval2=-sweeper%xstrmg(ireg2,ig)*hseg(iseg2)
               ix2=xval2
               ix2=MAX(ix2,-16000)
+              index2=ix2*8-7
               DO ipol=1,npol
-                exparg1=expoab(ix1*8+2*ipol-9)*xval1+expoab(ix1*8+2*ipol-8)
-                exparg2=expoab(ix2*8+2*ipol-9)*xval2+expoab(ix2*8+2*ipol-8)
+                exparg1=expoab(index1)*xval1+expoab(index1+1)
+                exparg2=expoab(index2)*xval2+expoab(index2+1)
+                index1=index1+2
+                index2=index2+2
 
                 !forward direction
                 phid1=phio1(ipol,ig)-sweeper%qbarmg(ireg1,ig)
