@@ -36,7 +36,7 @@ MK=mkdir
 # Default target
 .PHONY:
 all: $(OBJDIR) $(EXE)
-
+	
 $(EXE):$(OBJECTS)
 	$(LINKER) $(EXE) $(OBJECTS) $(FLAGS) $(INCLUDE)
 
