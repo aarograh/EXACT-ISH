@@ -35,12 +35,12 @@ MK=mkdir
 
 # Default target
 .PHONY:
-all: $(OBJDIR) $(OBJNAMES)
+all: $(OBJDIR) $(OBJECTS)
 	$(LINKER) $(EXE) $(OBJECTS) $(FLAGS) $(INCLUDE)
 
 # Object file target
-%.o: %.f90
-	$(COMPILER) $(OBJDIR)/$(@) $(FLAGS) $(INCLUDE) $<
+$(OBJDIR)/%.o: %.f90
+	$(COMPILER) $(@) $(FLAGS) $(INCLUDE) $<
 
 # Object directory target
 $(OBJDIR):
