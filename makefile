@@ -36,7 +36,7 @@ MK=mkdir
 # Default target
 .PHONY:
 all: $(OBJDIR) $(EXE)
-	
+	@echo "Everything is up to date."
 $(EXE):$(OBJECTS)
 	$(LINKER) $(EXE) $(OBJECTS) $(FLAGS) $(INCLUDE)
 
